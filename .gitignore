@@ -1,0 +1,94 @@
+# ── Python / Backend ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+build/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+backend/.venv/
+backend/venv/
+backend/env/
+
+# uv
+.python-version
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# ── Node / Expo / React Native ────────────────────────────────────────────────
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Metro bundler
+.metro-health-check*
+*.jsbundle
+
+# TypeScript
+*.tsbuildinfo
+
+# Expo generated example
+app-example
+
+# ── iOS ───────────────────────────────────────────────────────────────────────
+frontend/ios/
+ios/Pods/
+ios/build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+DerivedData/
+*.ipa
+*.p8
+*.p12
+*.mobileprovision
+
+# ── Android ───────────────────────────────────────────────────────────────────
+frontend/android/
+android/.gradle/
+android/build/
+android/app/build/
+*.apk
+*.aab
+*.jks
+*.key
+local.properties
+.kotlin/
+
+# ── Certificates & keys ───────────────────────────────────────────────────────
+*.pem
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*

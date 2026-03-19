@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npx tsc:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run:*)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(sed -i '' 's/Mapped\\\\[str | None\\\\]/Mapped[Optional[str]]/g' $f)",
+      "Bash(sed -i '' 's/Mapped\\\\[float | None\\\\]/Mapped[Optional[float]]/g' $f)",
+      "Bash(sed -i '' 's/^from typing import TYPE_CHECKING$/from typing import TYPE_CHECKING, Optional/' $f)"
+    ]
+  }
+}
