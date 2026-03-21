@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv add:*)",
+      "Bash(uv run python -c \":*)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(pkill -f \"uvicorn main:app\")",
+      "Bash(xargs kill:*)"
+    ]
+  }
+}

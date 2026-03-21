@@ -1,6 +1,6 @@
 from schemas.common import ErrorResponse, PaginatedResponse, PaginationMeta
-from schemas.auth import TokenResponse, LoginRequest, RegisterRequest
-from schemas.user import UserResponse, UserUpdate
+from schemas.auth import LoginRequest, RegisterRequest
+from schemas.user import UserProfileResponse, UpdateProfileRequest, UserResponse
 from schemas.expense import ExpenseCreate, ExpenseUpdate, ExpenseResponse
 from schemas.category import CategoryCreate, CategoryResponse
 from schemas.group import GroupCreate, GroupResponse, GroupMemberResponse
@@ -10,8 +10,8 @@ from schemas.settlement import SettlementCreate, SettlementResponse
 
 __all__ = [
     "ErrorResponse", "PaginatedResponse", "PaginationMeta",
-    "TokenResponse", "LoginRequest", "RegisterRequest",
-    "UserResponse", "UserUpdate",
+    "LoginRequest", "RegisterRequest",
+    "UserProfileResponse", "UpdateProfileRequest", "UserResponse",
     "ExpenseCreate", "ExpenseUpdate", "ExpenseResponse",
     "CategoryCreate", "CategoryResponse",
     "GroupCreate", "GroupResponse", "GroupMemberResponse",

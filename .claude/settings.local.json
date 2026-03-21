@@ -9,7 +9,20 @@
       "Bash(do)",
       "Bash(sed -i '' 's/Mapped\\\\[str | None\\\\]/Mapped[Optional[str]]/g' $f)",
       "Bash(sed -i '' 's/Mapped\\\\[float | None\\\\]/Mapped[Optional[float]]/g' $f)",
-      "Bash(sed -i '' 's/^from typing import TYPE_CHECKING$/from typing import TYPE_CHECKING, Optional/' $f)"
+      "Bash(sed -i '' 's/^from typing import TYPE_CHECKING$/from typing import TYPE_CHECKING, Optional/' $f)",
+      "Bash(cat \"/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker/frontend/app/\\(tabs\\)/subscriptions.tsx\")",
+      "Bash(cat \"/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker/frontend/app/\\(tabs\\)/reports.tsx\")",
+      "Bash(npx expo:*)",
+      "Bash(curl -s -X POST http://localhost:8000/api/v1/auth/register -H \"Content-Type: application/json\" -d '{\"\"\"\"name\"\"\"\":\"\"\"\"Test\"\"\"\",\"\"\"\"email\"\"\"\":\"\"\"\"test123@example.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"password123\"\"\"\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:8000/api/v1/auth/refresh -H \"Content-Type: application/json\" -d '{\"\"\"\"refreshToken\"\"\"\":\"\"\"\"test\"\"\"\"}')",
+      "Bash(ipconfig getifaddr:*)",
+      "Bash(lsof -iTCP:8000 -sTCP:LISTEN)",
+      "Bash(kill 22528 22530)",
+      "Bash(curl -s http://localhost:8000/api/v1/users/me -H \"Authorization: Bearer bad\")",
+      "Bash(curl -s --max-time 3 http://localhost:8000/health)",
+      "Bash(pkill -f uvicorn)",
+      "Bash(pkill -f \"fastapi\")"
     ]
   }
 }

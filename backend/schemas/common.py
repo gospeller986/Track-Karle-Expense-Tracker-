@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Generic, TypeVar
+from typing import Dict, Generic, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -21,4 +21,4 @@ class PaginatedResponse(BaseModel, Generic[T]):
 class ErrorResponse(BaseModel):
     error: str
     message: str
-    details: dict | None = None
+    details: Optional[Dict] = None
