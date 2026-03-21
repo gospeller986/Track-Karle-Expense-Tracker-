@@ -1,4 +1,8 @@
-import { View, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  View, ScrollView, TouchableOpacity, StyleSheet,
+  StatusBar, Alert, ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,16 +11,74 @@ import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { EXPENSES, getCategoryById, formatCurrency, formatDate } from '@/constants/mock-data';
+import { getExpense, deleteExpense } from '@/services/expense';
+import { formatCurrency, formatDate } from '@/constants/mock-data';
+import type { Expense } from '@/interfaces/expense';
 
 export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, spacing, radii } = useTheme();
   const router = useRouter();
 
-  const expense = EXPENSES.find(e => e.id === id) ?? EXPENSES[0];
-  const cat = getCategoryById(expense.categoryId);
-  const isIncome = expense.type === 'income';
+  const [expense, setExpense]   = useState<Expense | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deleting, setDeleting]   = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    setIsLoading(true);
+    getExpense(id)
+      .then(setExpense)
+      .catch(e => setError(e instanceof Error ? e.message : 'Failed to load'))
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  async function handleDelete() {
+    Alert.alert(
+      'Delete Transaction',
+      'Are you sure you want to delete this transaction? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteExpense(id!);
+              router.back();
+            } catch (e) {
+              Alert.alert('Error', e instanceof Error ? e.message : 'Failed to delete.');
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
+        <ActivityIndicator color={colors.accent} size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !expense) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
+        <ThemedText variant="body" color={colors.expense}>{error ?? 'Expense not found.'}</ThemedText>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <ThemedText variant="label" color={colors.accent}>Go back</ThemedText>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const cat       = expense.category;
+  const isIncome  = expense.type === 'income';
   const amountColor = isIncome ? colors.income : colors.expense;
 
   return (
@@ -29,12 +91,11 @@ export default function ExpenseDetailScreen() {
           <ThemedText variant="bodyLg" color={colors.textSecondary}>‹ Back</ThemedText>
         </TouchableOpacity>
         <ThemedText variant="h4">Detail</ThemedText>
-        <TouchableOpacity onPress={() => Alert.alert('Edit', 'Edit expense')}>
-          <ThemedText variant="bodyLg" color={colors.accent}>Edit</ThemedText>
-        </TouchableOpacity>
+        <View style={{ width: 48 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+
         {/* Hero amount */}
         <LinearGradient
           colors={['#1A1A1A', '#141414']}
@@ -58,9 +119,10 @@ export default function ExpenseDetailScreen() {
         <View style={{ padding: spacing.xl, gap: spacing.md }}>
           <Card padded={false}>
             {[
-              { label: 'Category', value: cat.name,               icon: cat.icon },
+              { label: 'Category', value: cat.name,                icon: cat.icon },
               { label: 'Date',     value: formatDate(expense.date), icon: '📅' },
               { label: 'Type',     value: expense.type.charAt(0).toUpperCase() + expense.type.slice(1), icon: isIncome ? '▲' : '▼' },
+              ...(expense.note ? [{ label: 'Note', value: expense.note, icon: '📝' }] : []),
             ].map((row, idx, arr) => (
               <View
                 key={row.label}
@@ -73,7 +135,7 @@ export default function ExpenseDetailScreen() {
                 <ThemedText variant="bodySm" color={colors.textSecondary}>{row.label}</ThemedText>
                 <View style={styles.detailValue}>
                   <ThemedText style={{ fontSize: 16 }}>{row.icon}</ThemedText>
-                  <ThemedText variant="bodySm" semibold style={{ marginLeft: 6 }}>{row.value}</ThemedText>
+                  <ThemedText variant="bodySm" semibold style={{ marginLeft: 6, flexShrink: 1 }}>{row.value}</ThemedText>
                 </View>
               </View>
             ))}
@@ -81,10 +143,22 @@ export default function ExpenseDetailScreen() {
 
           {/* Delete button */}
           <TouchableOpacity
-            onPress={() => { router.back(); }}
-            style={[styles.deleteBtn, { backgroundColor: colors.expenseMuted, borderRadius: radii.lg, borderColor: colors.expense, borderWidth: 1 }]}
+            onPress={handleDelete}
+            disabled={deleting}
+            style={[
+              styles.deleteBtn,
+              {
+                backgroundColor: colors.expenseMuted,
+                borderRadius: radii.lg,
+                borderColor: colors.expense,
+                borderWidth: 1,
+                opacity: deleting ? 0.6 : 1,
+              },
+            ]}
           >
-            <ThemedText variant="label" color={colors.expense}>🗑  Delete Transaction</ThemedText>
+            <ThemedText variant="label" color={colors.expense}>
+              {deleting ? 'Deleting…' : '🗑  Delete Transaction'}
+            </ThemedText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -93,33 +167,10 @@ export default function ExpenseDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  hero: {
-    alignItems: 'center',
-    paddingVertical: 36,
-    paddingHorizontal: 24,
-    gap: 10,
-  },
-  iconBubble: {
-    width: 80,
-    height: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  detailValue: { flexDirection: 'row', alignItems: 'center' },
-  deleteBtn: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    marginTop: 8,
-  },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16 },
+  hero:        { alignItems: 'center', paddingVertical: 36, paddingHorizontal: 24, gap: 10 },
+  iconBubble:  { width: 80, height: 80, alignItems: 'center', justifyContent: 'center' },
+  detailRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  detailValue: { flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end' },
+  deleteBtn:   { alignItems: 'center', paddingVertical: 16, marginTop: 8 },
 });

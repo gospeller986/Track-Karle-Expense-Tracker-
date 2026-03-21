@@ -22,7 +22,9 @@
       "Bash(curl -s http://localhost:8000/api/v1/users/me -H \"Authorization: Bearer bad\")",
       "Bash(curl -s --max-time 3 http://localhost:8000/health)",
       "Bash(pkill -f uvicorn)",
-      "Bash(pkill -f \"fastapi\")"
+      "Bash(pkill -f \"fastapi\")",
+      "Bash(/tmp/tree_structure.txt:*)",
+      "Read(//tmp/**)"
     ]
   }
 }
