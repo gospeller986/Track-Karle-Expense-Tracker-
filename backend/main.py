@@ -18,6 +18,9 @@ import models.password_reset_token  # noqa: F401
 import models.category  # noqa: F401
 import models.expense  # noqa: F401
 import models.subscription  # noqa: F401
+import models.group  # noqa: F401
+import models.group_expense  # noqa: F401
+import models.settlement  # noqa: F401
 
 # ── System category seed data ──────────────────────────────────────────────────
 SYSTEM_CATEGORIES = [
@@ -86,15 +89,64 @@ async def health():
     return {"status": "ok", "version": settings.app_version}
 
 
+@app.get("/join/{token}", tags=["invite"], include_in_schema=False)
+async def join_redirect(token: str, request: Request):
+    from fastapi.responses import HTMLResponse
+    prod_link = f"exptracker://join/{token}"
+    # In Expo Go the registered scheme is exp://<host>:8081/--/<path>
+    # We derive the host from the incoming request (same machine serves both backend and Metro).
+    host = request.url.hostname  # e.g. 192.168.1.3
+    expo_link = f"exp://{host}:8081/--/join/{token}"
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join Group – Expense Tracker</title>
+  <style>
+    body{{font-family:sans-serif;text-align:center;padding:60px 24px;background:#0d0d0d;color:#fff}}
+    a{{color:#C9F31D}}
+  </style>
+</head>
+<body>
+  <p style="font-size:48px">💸</p>
+  <h2>Opening Expense Tracker…</h2>
+  <p style="color:#aaa" id="msg">Connecting to app…</p>
+  <script>
+    // 1. Try production build first (exptracker:// registered by a standalone/dev-client build).
+    //    On iOS, navigating to an unregistered scheme silently fails — the page stays open.
+    window.location.href = '{prod_link}';
+
+    // 2. After 800 ms, if we are still here, try Expo Go (exp:// is registered by the Expo Go app).
+    setTimeout(function() {{
+      document.getElementById('msg').innerText = 'Trying Expo Go…';
+      window.location.href = '{expo_link}';
+    }}, 800);
+
+    // 3. Final manual fallback.
+    setTimeout(function() {{
+      document.getElementById('msg').innerHTML =
+        'Could not open the app automatically.<br><br>' +
+        '<a href="{prod_link}">Tap here</a> if you have a standalone build,<br>' +
+        'or make sure Expo Go is open and try again.';
+    }}, 2500);
+  </script>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+
 # ── Routers ────────────────────────────────────────────────────────────────────
 from routes.auth import router as auth_router              # noqa: E402
 from routes.users import router as users_router            # noqa: E402
 from routes.categories import router as categories_router  # noqa: E402
 from routes.expenses import router as expenses_router            # noqa: E402
 from routes.subscriptions import router as subscriptions_router  # noqa: E402
+from routes.groups import router as groups_router                # noqa: E402
 
 app.include_router(auth_router,           prefix="/api/v1/auth",          tags=["auth"])
 app.include_router(users_router,          prefix="/api/v1/users",          tags=["users"])
 app.include_router(categories_router,     prefix="/api/v1/categories",     tags=["categories"])
 app.include_router(expenses_router,       prefix="/api/v1/expenses",       tags=["expenses"])
 app.include_router(subscriptions_router,  prefix="/api/v1/subscriptions",  tags=["subscriptions"])
+app.include_router(groups_router,         prefix="/api/v1/groups",         tags=["groups"])

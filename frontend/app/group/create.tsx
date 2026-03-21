@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, StatusBar, KeyboardAvoidingView, Platform,
+  StyleSheet, StatusBar, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -10,15 +10,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
+import { createGroup } from '@/services/group';
 
-// Emoji options for group icon
 const GROUP_EMOJIS = [
   '🌊', '🏠', '🍱', '✈️', '🎉', '🏕️', '🎮', '🏋️',
   '🚗', '🏖️', '🎬', '🍕', '🛒', '💼', '🎵', '⚽',
   '🏔️', '🌴', '🎯', '💡', '🔥', '💎', '🌙', '🌟',
 ];
 
-// Suggested group names
 const SUGGESTIONS = [
   'Goa Trip', 'Flat mates', 'Office lunch', 'Weekend trip',
   'Movie night', 'Road trip', 'House party', 'College friends',
@@ -31,8 +30,27 @@ export default function CreateGroupScreen() {
   const [name, setName]           = useState('');
   const [selectedEmoji, setEmoji] = useState('🌟');
   const [description, setDesc]    = useState('');
+  const [saving, setSaving]       = useState(false);
 
-  const canProceed = name.trim().length > 0;
+  const canCreate = name.trim().length > 0;
+
+  async function handleCreate() {
+    if (!canCreate) return;
+    setSaving(true);
+    try {
+      const group = await createGroup({
+        name: name.trim(),
+        icon: selectedEmoji,
+        description: description.trim() || undefined,
+      });
+      // Navigate directly to the group detail screen
+      router.replace(`/group/${group.id}` as any);
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to create group.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom']}>
@@ -45,11 +63,7 @@ export default function CreateGroupScreen() {
             <Ionicons name="close" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <ThemedText variant="h4">New Group</ThemedText>
-          {/* Step indicator */}
-          <View style={styles.stepIndicator}>
-            <View style={[styles.stepDot, { backgroundColor: colors.accent }]} />
-            <View style={[styles.stepDot, { backgroundColor: colors.border }]} />
-          </View>
+          <View style={{ width: 24 }} />
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -60,13 +74,9 @@ export default function CreateGroupScreen() {
               <ThemedText variant="label" color={colors.textSecondary} style={{ marginBottom: spacing.lg }}>
                 PICK AN ICON
               </ThemedText>
-
-              {/* Large preview */}
               <View style={[styles.iconPreview, { backgroundColor: colors.secondaryMuted, borderColor: colors.secondary, borderRadius: radii['2xl'], borderWidth: 2 }]}>
                 <ThemedText style={{ fontSize: 52 }}>{selectedEmoji}</ThemedText>
               </View>
-
-              {/* Emoji grid */}
               <View style={[styles.emojiGrid, { marginTop: spacing.xl }]}>
                 {GROUP_EMOJIS.map(emoji => {
                   const isSelected = emoji === selectedEmoji;
@@ -106,11 +116,8 @@ export default function CreateGroupScreen() {
                   style={[styles.nameInput, { color: colors.textPrimary, fontSize: 20, fontWeight: '600' }]}
                   maxLength={40}
                   returnKeyType="done"
-                  autoFocus={false}
                 />
               </Card>
-
-              {/* Name suggestions */}
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -161,35 +168,31 @@ export default function CreateGroupScreen() {
           </View>
         </ScrollView>
 
-        {/* Next button pinned to bottom */}
+        {/* Create button */}
         <View style={[styles.footer, { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, borderTopColor: colors.border, borderTopWidth: 1 }]}>
           <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: '/group/add-members',
-                params: { name: name.trim(), emoji: selectedEmoji },
-              })
-            }
-            disabled={!canProceed}
+            onPress={handleCreate}
+            disabled={!canCreate || saving}
             activeOpacity={0.85}
             style={[
-              styles.nextBtn,
+              styles.createBtn,
               {
-                backgroundColor: canProceed ? colors.accent : colors.surfaceElevated,
+                backgroundColor: canCreate && !saving ? colors.secondary : colors.surfaceElevated,
                 borderRadius: radii.xl,
-                opacity: canProceed ? 1 : 0.5,
+                opacity: canCreate ? 1 : 0.5,
               },
             ]}
           >
-            <ThemedText variant="bodyLg" bold color={canProceed ? colors.textOnAccent : colors.textTertiary}>
-              Next — Add Members
-            </ThemedText>
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color={canProceed ? colors.textOnAccent : colors.textTertiary}
-              style={{ marginLeft: 8 }}
-            />
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="people" size={20} color={canCreate ? '#fff' : colors.textTertiary} style={{ marginRight: spacing.sm }} />
+                <ThemedText variant="bodyLg" bold color={canCreate ? '#fff' : colors.textTertiary}>
+                  Create Group
+                </ThemedText>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -199,53 +202,13 @@ export default function CreateGroupScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  stepIndicator: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  stepDot: { width: 20, height: 4, borderRadius: 2 },
-  iconPreview: {
-    width: 100,
-    height: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emojiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'center',
-  },
-  emojiBtn: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nameInput: {
-    paddingVertical: 4,
-    letterSpacing: -0.3,
-  },
-  suggestion: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  descInput: {
-    fontSize: 15,
-    paddingVertical: 4,
-    textAlignVertical: 'top',
-    minHeight: 56,
-  },
-  footer: {
-    paddingTop: 16,
-  },
-  nextBtn: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16 },
+  iconPreview: { width: 100, height: 100, alignItems: 'center', justifyContent: 'center' },
+  emojiGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
+  emojiBtn:    { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
+  nameInput:   { paddingVertical: 4, letterSpacing: -0.3 },
+  suggestion:  { paddingHorizontal: 14, paddingVertical: 8 },
+  descInput:   { fontSize: 15, paddingVertical: 4, textAlignVertical: 'top', minHeight: 56 },
+  footer:      { paddingTop: 16 },
+  createBtn:   { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
 });

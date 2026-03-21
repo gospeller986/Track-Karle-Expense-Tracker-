@@ -24,7 +24,8 @@
       "Bash(pkill -f uvicorn)",
       "Bash(pkill -f \"fastapi\")",
       "Bash(/tmp/tree_structure.txt:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(uv run python -c \":*)"
     ]
   }
 }

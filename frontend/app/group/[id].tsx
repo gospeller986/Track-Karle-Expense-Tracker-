@@ -1,193 +1,94 @@
-import { useState } from 'react';
-import { ScrollView, View, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ScrollView, View, TouchableOpacity, StyleSheet,
+  StatusBar, ActivityIndicator, Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  GROUPS, GROUP_EXPENSES, GROUP_MEMBERS,
-  getCategoryById, formatCurrency, formatDate,
-} from '@/constants/mock-data';
-import type { GroupExpense, SplitType } from '@/constants/mock-data';
-
-// ─── Helpers ──────────────────────────────────────────────────
-
-const SPLIT_LABEL: Record<SplitType, string> = {
-  equal:      'Equal',
-  unequal:    'Unequal',
-  percentage: 'By %',
-};
-
-function getMemberById(id: string) {
-  return GROUP_MEMBERS.find(m => m.id === id);
-}
-
-function getYourShare(expense: GroupExpense): number {
-  const myId = 'u1';
-  if (!expense.splitWith.includes(myId)) return 0;
-  if (expense.splitType === 'equal') {
-    return expense.amount / expense.splitWith.length;
-  }
-  return expense.splits?.find(s => s.memberId === myId)?.amount ?? 0;
-}
-
-// ─── Member Avatar row ────────────────────────────────────────
+import { getGroup, deleteGroup } from '@/services/group';
+import { formatCurrency } from '@/constants/mock-data';
+import { useAuth } from '@/context/auth-context';
+import type { Group } from '@/interfaces/group';
 
 const AVATAR_COLORS = ['#C9F31D', '#7B61FF', '#FF4D4D', '#00C48C', '#FF8A00', '#4D9EFF'];
 
-function MemberAvatarStack({ memberIds, max = 4 }: { memberIds: string[]; max?: number }) {
-  const { colors } = useTheme();
-  const visible = memberIds.slice(0, max);
-  const extra   = memberIds.length - max;
-
-  return (
-    <View style={{ flexDirection: 'row' }}>
-      {visible.map((id, i) => {
-        const m = getMemberById(id);
-        const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-        return (
-          <View
-            key={id}
-            style={[
-              styles.stackAvatar,
-              { backgroundColor: color + '22', borderColor: colors.surface, marginLeft: i > 0 ? -8 : 0 },
-            ]}
-          >
-            <ThemedText variant="caption" color={color} bold>{m?.initials ?? '??'}</ThemedText>
-          </View>
-        );
-      })}
-      {extra > 0 && (
-        <View style={[styles.stackAvatar, { backgroundColor: colors.surfaceElevated, borderColor: colors.surface, marginLeft: -8 }]}>
-          <ThemedText variant="caption" color={colors.textSecondary}>+{extra}</ThemedText>
-        </View>
-      )}
-    </View>
-  );
-}
-
-// ─── Balance chip per member ──────────────────────────────────
-
-function MemberBalanceRow({ memberId, groupId, index }: { memberId: string; groupId: string; index: number }) {
-  const { colors, spacing, radii } = useTheme();
-  const member = getMemberById(memberId);
-  const color  = AVATAR_COLORS[index % AVATAR_COLORS.length];
-
-  // Compute net balance for this member from all expenses
-  const expenses = GROUP_EXPENSES.filter(e => e.groupId === groupId && !e.settled);
-  let paid = 0;
-  let owes = 0;
-  expenses.forEach(exp => {
-    if (exp.paidBy === memberId) paid += exp.amount;
-    if (exp.splitWith.includes(memberId)) {
-      if (exp.splitType === 'equal') owes += exp.amount / exp.splitWith.length;
-      else owes += exp.splits?.find(s => s.memberId === memberId)?.amount ?? 0;
-    }
-  });
-  const net = paid - owes; // positive = owed to them
-
-  return (
-    <View style={[styles.memberBalRow, { paddingHorizontal: spacing.lg, paddingVertical: spacing.md }]}>
-      <View style={[styles.memberAvatar, { backgroundColor: color + '22' }]}>
-        <ThemedText variant="caption" color={color} bold>{member?.initials}</ThemedText>
-      </View>
-      <View style={{ flex: 1, marginLeft: spacing.md }}>
-        <ThemedText variant="bodySm" semibold>{memberId === 'u1' ? 'You' : member?.name}</ThemedText>
-        <ThemedText variant="caption" color={colors.textSecondary}>
-          Paid {formatCurrency(paid)}
-        </ThemedText>
-      </View>
-      {net === 0 ? (
-        <ThemedText variant="caption" color={colors.textTertiary}>settled up</ThemedText>
-      ) : (
-        <View style={{ alignItems: 'flex-end' }}>
-          <ThemedText variant="bodySm" semibold color={net > 0 ? colors.income : colors.expense}>
-            {net > 0 ? 'gets back' : 'owes'} {formatCurrency(Math.abs(net))}
-          </ThemedText>
-        </View>
-      )}
-    </View>
-  );
-}
-
-// ─── Expense row ─────────────────────────────────────────────
-
-function ExpenseRow({ expense, isLast }: { expense: GroupExpense; isLast: boolean }) {
-  const { colors, spacing, radii } = useTheme();
-  const payer    = getMemberById(expense.paidBy);
-  const cat      = getCategoryById(expense.categoryId);
-  const myShare  = getYourShare(expense);
-  const iAmPayer = expense.paidBy === 'u1';
-
-  return (
-    <View
-      style={[
-        styles.expRow,
-        { paddingHorizontal: spacing.lg, paddingVertical: spacing.md + 2 },
-        !isLast && { borderBottomColor: colors.border, borderBottomWidth: 1 },
-        expense.settled && { opacity: 0.5 },
-      ]}
-    >
-      {/* Category icon */}
-      <View style={[styles.catIcon, { backgroundColor: cat.color + '22', borderRadius: radii.lg }]}>
-        <ThemedText style={{ fontSize: 18 }}>{cat.icon}</ThemedText>
-      </View>
-
-      {/* Middle info */}
-      <View style={{ flex: 1, marginLeft: spacing.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <ThemedText variant="bodySm" semibold numberOfLines={1} style={{ flex: 1 }}>
-            {expense.title}
-          </ThemedText>
-          <Badge label={SPLIT_LABEL[expense.splitType]} variant="neutral" size="sm" />
-        </View>
-        <ThemedText variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
-          {formatDate(expense.date)} · paid by {iAmPayer ? 'you' : payer?.name}
-        </ThemedText>
-        <MemberAvatarStack memberIds={expense.splitWith} max={5} />
-      </View>
-
-      {/* Right: total + your share */}
-      <View style={{ alignItems: 'flex-end', marginLeft: spacing.sm }}>
-        <ThemedText variant="bodySm" bold>{formatCurrency(expense.amount)}</ThemedText>
-        {myShare > 0 && (
-          <ThemedText
-            variant="caption"
-            color={iAmPayer ? colors.income : colors.expense}
-          >
-            {iAmPayer ? `+${formatCurrency(expense.amount - myShare)}` : `-${formatCurrency(myShare)}`}
-          </ThemedText>
-        )}
-        {expense.settled && (
-          <ThemedText variant="caption" color={colors.textTertiary}>settled</ThemedText>
-        )}
-      </View>
-    </View>
-  );
-}
-
-// ─── Main Screen ──────────────────────────────────────────────
+function avatarColor(i: number) { return AVATAR_COLORS[i % AVATAR_COLORS.length]; }
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, spacing, radii } = useTheme();
   const router = useRouter();
+  const { user } = useAuth();
 
-  const [showSettled, setShowSettled] = useState(false);
+  const [group, setGroup]       = useState<Group | null>(null);
+  const [isLoading, setLoading] = useState(true);
+  const [error, setError]       = useState<string | null>(null);
 
-  const group = GROUPS.find(g => g.id === id) ?? GROUPS[0];
-  const allExpenses   = GROUP_EXPENSES.filter(e => e.groupId === group.id);
-  const unsettled     = allExpenses.filter(e => !e.settled);
-  const settled       = allExpenses.filter(e => e.settled);
-  const displayList   = showSettled ? allExpenses : unsettled;
+  const load = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      setGroup(await getGroup(id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load group');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
-  const owed    = group.yourBalance > 0;
-  const settled_ = group.yourBalance === 0;
+  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  async function handleDelete() {
+    if (!group) return;
+    Alert.alert(
+      'Delete Group',
+      `Delete "${group.name}"? All expenses and settlements will be removed.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete', style: 'destructive', onPress: async () => {
+            try {
+              await deleteGroup(group.id);
+              router.back();
+            } catch (e) {
+              Alert.alert('Error', e instanceof Error ? e.message : 'Failed to delete.');
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
+        <ActivityIndicator color={colors.accent} size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !group) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
+        <ThemedText variant="body" color={colors.expense}>{error ?? 'Group not found.'}</ThemedText>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <ThemedText variant="label" color={colors.accent}>Go back</ThemedText>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const owed      = group.yourBalance > 0;
+  const settled   = group.yourBalance === 0;
+  const isCreator = group.createdBy === user?.id;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -200,35 +101,41 @@ export default function GroupDetailScreen() {
         </TouchableOpacity>
         <View style={{ alignItems: 'center' }}>
           <ThemedText variant="h4">{group.icon} {group.name}</ThemedText>
-          <ThemedText variant="caption" color={colors.textSecondary}>{group.members.length} members</ThemedText>
+          <ThemedText variant="caption" color={colors.textSecondary}>{group.memberCount} member{group.memberCount !== 1 ? 's' : ''}</ThemedText>
         </View>
-        {/* Add expense */}
-        <TouchableOpacity
-          onPress={() => router.push({ pathname: '/group/add-expense', params: { groupId: group.id } })}
-          style={[styles.addBtn, { backgroundColor: colors.secondary, borderRadius: radii.full }]}
-        >
-          <Ionicons name="add" size={22} color="#fff" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          {isCreator && (
+            <TouchableOpacity
+              onPress={handleDelete}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={[styles.headerBtn, { backgroundColor: colors.expenseMuted, borderRadius: radii.full }]}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.expense} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: '/group/invite', params: { groupId: group.id, groupName: group.name } } as any)}
+            style={[styles.headerBtn, { backgroundColor: colors.secondary, borderRadius: radii.full }]}
+          >
+            <Ionicons name="person-add-outline" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
-        {/* Hero balance card */}
+        {/* Hero balance */}
         <LinearGradient
           colors={['#1A1A1A', '#141414']}
           style={[styles.hero, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
         >
           <View style={{ alignItems: 'center' }}>
             <ThemedText variant="caption" color={colors.textSecondary}>YOUR BALANCE</ThemedText>
-            {settled_ ? (
+            {settled ? (
               <ThemedText variant="h2" color={colors.income} style={{ marginTop: 4 }}>All settled up ✓</ThemedText>
             ) : (
               <>
-                <ThemedText
-                  variant="display"
-                  color={owed ? colors.income : colors.expense}
-                  style={{ marginTop: 4, letterSpacing: -2 }}
-                >
+                <ThemedText variant="display" color={owed ? colors.income : colors.expense} style={{ marginTop: 4, letterSpacing: -2 }}>
                   {formatCurrency(Math.abs(group.yourBalance))}
                 </ThemedText>
                 <ThemedText variant="bodySm" color={colors.textSecondary} style={{ marginTop: 4 }}>
@@ -237,90 +144,66 @@ export default function GroupDetailScreen() {
               </>
             )}
           </View>
-
-          {/* Settle up button */}
-          {!settled_ && (
-            <TouchableOpacity
-              style={[
-                styles.settleBtn,
-                { backgroundColor: owed ? colors.incomeMuted : colors.expenseMuted, borderRadius: radii.xl,
-                  borderColor: owed ? colors.income : colors.expense, borderWidth: 1 },
-              ]}
-            >
-              <Ionicons name="checkmark-circle-outline" size={18} color={owed ? colors.income : colors.expense} />
-              <ThemedText variant="label" color={owed ? colors.income : colors.expense} style={{ marginLeft: 6 }}>
-                Settle Up
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-
-          {/* Group total */}
           <ThemedText variant="caption" color={colors.textTertiary} style={{ marginTop: spacing.md }}>
             Total group spend: {formatCurrency(group.totalExpenses)}
           </ThemedText>
         </LinearGradient>
 
-        <View style={{ gap: spacing.xl, paddingTop: spacing.xl }}>
+        <View style={{ gap: spacing.xl, paddingTop: spacing.xl, paddingHorizontal: spacing.xl }}>
 
-          {/* Member balances */}
-          <View style={{ paddingHorizontal: spacing.xl }}>
-            <ThemedText variant="label" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
-              MEMBER BALANCES
-            </ThemedText>
+          {/* Members */}
+          <View>
+            <View style={styles.sectionHeader}>
+              <ThemedText variant="label" color={colors.textSecondary}>MEMBERS</ThemedText>
+              <TouchableOpacity
+                onPress={() => router.push({ pathname: '/group/invite', params: { groupId: group.id, groupName: group.name } } as any)}
+              >
+                <ThemedText variant="caption" color={colors.secondary}>+ Invite</ThemedText>
+              </TouchableOpacity>
+            </View>
             <Card padded={false}>
               {group.members.map((member, idx) => (
                 <View
                   key={member.id}
-                  style={idx < group.members.length - 1 ? { borderBottomColor: colors.border, borderBottomWidth: 1 } : undefined}
+                  style={[
+                    styles.memberRow,
+                    { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+                    idx < group.members.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: 1 },
+                  ]}
                 >
-                  <MemberBalanceRow memberId={member.id} groupId={group.id} index={idx} />
+                  <View style={[styles.avatar, { backgroundColor: avatarColor(idx) + '22' }]}>
+                    <ThemedText variant="caption" color={avatarColor(idx)} bold>{member.initials}</ThemedText>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                    <ThemedText variant="bodySm" semibold>
+                      {member.id === user?.id ? 'You' : member.name}
+                    </ThemedText>
+                  </View>
                 </View>
               ))}
             </Card>
           </View>
 
-          {/* Expenses list */}
-          <View style={{ paddingHorizontal: spacing.xl }}>
-            <View style={styles.sectionHeader}>
-              <ThemedText variant="label" color={colors.textSecondary}>
-                EXPENSES
-                {unsettled.length > 0 && (
-                  <ThemedText variant="label" color={colors.expense}> · {unsettled.length} unsettled</ThemedText>
-                )}
+          {/* Expenses — empty state (full CRUD coming next) */}
+          <View>
+            <ThemedText variant="label" color={colors.textSecondary} style={{ marginBottom: 0 }}>EXPENSES</ThemedText>
+            <View style={styles.emptyBox}>
+              <ThemedText style={{ fontSize: 40 }}>🧾</ThemedText>
+              <ThemedText variant="h4" style={{ marginTop: 12 }}>No expenses yet</ThemedText>
+              <ThemedText variant="body" color={colors.textSecondary} style={{ marginTop: 6, textAlign: 'center' }}>
+                Tap + to add the first expense for this group
               </ThemedText>
-              {settled.length > 0 && (
-                <TouchableOpacity onPress={() => setShowSettled(v => !v)}>
-                  <ThemedText variant="caption" color={colors.accent}>
-                    {showSettled ? 'Hide settled' : `Show settled (${settled.length})`}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
             </View>
-
-            {displayList.length > 0 ? (
-              <Card padded={false}>
-                {displayList.map((exp, idx) => (
-                  <ExpenseRow key={exp.id} expense={exp} isLast={idx === displayList.length - 1} />
-                ))}
-              </Card>
-            ) : (
-              <View style={styles.emptyBox}>
-                <ThemedText style={{ fontSize: 40 }}>🧾</ThemedText>
-                <ThemedText variant="h4" style={{ marginTop: 12 }}>No expenses yet</ThemedText>
-                <ThemedText variant="body" color={colors.textSecondary} style={{ marginTop: 6, textAlign: 'center' }}>
-                  Tap + to add the first expense for this group
-                </ThemedText>
-              </View>
-            )}
           </View>
+
 
         </View>
       </ScrollView>
 
-      {/* Floating Add Expense CTA */}
+      {/* FAB */}
       <View style={[styles.fab, { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl }]}>
         <TouchableOpacity
-          onPress={() => router.push({ pathname: '/group/add-expense', params: { groupId: group.id } })}
+          onPress={() => router.push({ pathname: '/group/add-expense', params: { groupId: group.id } } as any)}
           activeOpacity={0.85}
           style={[styles.fabBtn, { backgroundColor: colors.secondary, borderRadius: radii.xl }]}
         >
@@ -333,25 +216,14 @@ export default function GroupDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  addBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  hero: { paddingHorizontal: 24, paddingVertical: 28, alignItems: 'center', gap: 12 },
-  settleBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10 },
-  memberBalRow: { flexDirection: 'row', alignItems: 'center' },
-  memberAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16 },
+  inviteBtn:   { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  headerBtn:   { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  hero:        { paddingHorizontal: 24, paddingVertical: 28, alignItems: 'center', gap: 12 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  expRow: { flexDirection: 'row', alignItems: 'center' },
-  catIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  stackAvatar: {
-    width: 26, height: 26, borderRadius: 13, borderWidth: 2,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  emptyBox: { alignItems: 'center', paddingVertical: 48 },
-  fab: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  fabBtn: { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  memberRow:   { flexDirection: 'row', alignItems: 'center' },
+  avatar:      { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  emptyBox:    { alignItems: 'center', paddingVertical: 48 },
+  fab:         { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  fabBtn:      { height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
 });

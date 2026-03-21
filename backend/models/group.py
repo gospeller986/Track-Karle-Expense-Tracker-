@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy import Enum, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import UUIDBase
@@ -19,6 +19,7 @@ class Group(UUIDBase):
     icon: Mapped[str] = mapped_column(String(10), nullable=False, default="👥")
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    invite_token: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True, index=True)
 
     # Relationships
     members: Mapped[list["GroupMember"]] = relationship("GroupMember", back_populates="group", lazy="noload", cascade="all, delete-orphan")
