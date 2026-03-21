@@ -44,9 +44,11 @@ function RootNavigator() {
 
       {/* App group */}
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="expense/add"       options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-      <Stack.Screen name="expense/[id]"      options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="profile/index"     options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="expense/add"         options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="expense/[id]"        options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="subscription/add"    options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="subscription/[id]"   options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="profile/index"       options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="group/create"      options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="group/add-members" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="group/[id]"        options={{ animation: 'slide_from_right' }} />
