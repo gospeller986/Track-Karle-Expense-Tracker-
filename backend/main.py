@@ -145,6 +145,7 @@ from routes.subscriptions import router as subscriptions_router        # noqa: E
 from routes.groups import router as groups_router                      # noqa: E402
 from routes.group_expenses import router as group_expenses_router      # noqa: E402
 from routes.settlements import router as settlements_router            # noqa: E402
+from routes.reports import router as reports_router                    # noqa: E402
 
 app.include_router(auth_router,            prefix="/api/v1/auth",          tags=["auth"])
 app.include_router(users_router,           prefix="/api/v1/users",          tags=["users"])
@@ -154,3 +155,4 @@ app.include_router(subscriptions_router,   prefix="/api/v1/subscriptions",  tags
 app.include_router(groups_router,          prefix="/api/v1/groups",         tags=["groups"])
 app.include_router(group_expenses_router,  prefix="/api/v1/groups",         tags=["group-expenses"])
 app.include_router(settlements_router,     prefix="/api/v1/groups",         tags=["settlements"])
+app.include_router(reports_router,         prefix="/api/v1/reports",        tags=["reports"])
