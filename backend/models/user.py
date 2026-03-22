@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from models.expense import Expense
     from models.group import GroupMember
     from models.subscription import Subscription
+    from models.notification import DeviceToken, Notification, NotificationPreference
 
 
 class User(UUIDBase):
@@ -31,3 +32,6 @@ class User(UUIDBase):
     expenses: Mapped[list["Expense"]] = relationship("Expense", back_populates="user", lazy="noload")
     group_memberships: Mapped[list["GroupMember"]] = relationship("GroupMember", back_populates="user", lazy="noload")
     subscriptions: Mapped[list["Subscription"]] = relationship("Subscription", back_populates="user", lazy="noload")
+    device_tokens: Mapped[list["DeviceToken"]] = relationship("DeviceToken", back_populates="user", lazy="noload")
+    notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="user", lazy="noload")
+    notification_preferences: Mapped[list["NotificationPreference"]] = relationship("NotificationPreference", back_populates="user", lazy="noload")

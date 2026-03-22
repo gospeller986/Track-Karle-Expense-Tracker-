@@ -16,6 +16,7 @@ dependencies = [
     "eval-type-backport>=0.3.1",
     "greenlet>=3.2.5",
     "bcrypt<4.0.0",
+    "apscheduler>=3.10",
 ]
 
 [tool.uv]

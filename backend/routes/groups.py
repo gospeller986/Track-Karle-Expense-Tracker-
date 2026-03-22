@@ -175,10 +175,25 @@ async def join_group(
         # Already a member — just return the group
         bal, total = await repo.compute_balance(group.id, current_user.id)
         return _group_to_response(group, bal, total)
+    existing_member_ids = [gm.user.id for gm in group.members]
+    new_member_name = current_user.name  # capture before commit expires it
     await repo.add_member(group.id, current_user.id)
     await db.commit()
     # Reload with new member included
     group = await repo.get_by_id(group.id)  # type: ignore[assignment]
+
+    # Notify existing members that someone joined
+    from services.notification import NotificationService
+    svc = NotificationService(db)
+    await svc.notify_group_joined(
+        group_id=group.id,
+        group_name=group.name,
+        new_member_name=new_member_name,
+        new_member_id=current_user.id,
+        existing_member_ids=existing_member_ids,
+    )
+    await db.commit()
+
     return _group_to_response(group)
 
 

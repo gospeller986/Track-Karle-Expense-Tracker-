@@ -6,6 +6,7 @@ from models.group import Group, GroupMember
 from models.group_expense import GroupExpense, GroupExpenseSplit
 from models.subscription import Subscription
 from models.settlement import Settlement
+from models.notification import DeviceToken, Notification, NotificationPreference
 
 __all__ = [
     "User",
@@ -17,4 +18,7 @@ __all__ = [
     "GroupExpenseSplit",
     "Subscription",
     "Settlement",
+    "DeviceToken",
+    "Notification",
+    "NotificationPreference",
 ]

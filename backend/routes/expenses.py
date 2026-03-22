@@ -81,6 +81,22 @@ async def create_expense(
     )
     # Reload with the eagerly-joined category relationship
     expense = await repo.get_user_expense(expense.id, current_user.id)
+
+    # Budget alert — only for expense type, only when user has a budget set
+    if body.type == "expense" and current_user.monthly_budget:
+        from services.notification import BUDGET_THRESHOLD, NotificationService
+        month_total = await repo.get_month_total(
+            current_user.id, body.date.year, body.date.month
+        )
+        if month_total >= current_user.monthly_budget * BUDGET_THRESHOLD:
+            svc = NotificationService(db)
+            await svc.notify_budget_alert(
+                user_id=current_user.id,
+                spent=month_total,
+                budget=current_user.monthly_budget,
+                currency=current_user.currency,
+            )
+
     return ExpenseResponse.model_validate(expense)
 
 

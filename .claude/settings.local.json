@@ -25,7 +25,17 @@
       "Bash(pkill -f \"fastapi\")",
       "Bash(/tmp/tree_structure.txt:*)",
       "Read(//tmp/**)",
-      "Bash(uv run python -c \":*)"
+      "Bash(uv run python -c \":*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(python -m alembic upgrade head)",
+      "Bash(python3 -m alembic upgrade head)",
+      "Bash(.venv/bin/alembic upgrade:*)",
+      "Bash(.venv/bin/alembic stamp:*)",
+      "Bash(.venv/bin/alembic current:*)",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(.venv/bin/uv add:*)",
+      "Bash(uv --version)",
+      "Bash(uv add:*)"
     ]
   }
 }

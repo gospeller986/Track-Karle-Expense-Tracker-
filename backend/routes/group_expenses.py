@@ -85,9 +85,41 @@ async def add_group_expense(
     if not payload.split_with:
         raise HTTPException(status_code=422, detail="split_with must not be empty")
 
+    # Capture everything needed for notifications BEFORE commit —
+    # db.commit() expires all loaded ORM objects so accessing them afterwards
+    # triggers lazy loads which are not allowed in async SQLAlchemy.
+    member_ids = [gm.user.id for gm in group.members]
+    payer = next((gm.user for gm in group.members if gm.user.id == payload.paid_by), None)
+    payer_name = payer.name if payer else "Someone"
+    currency = payer.currency if payer else "INR"
+    group_name = group.name
+
     repo = GroupExpenseRepository(db)
     expense = await repo.create(group_id=group_id, payload=payload)
+
+    # Capture expense fields before commit expires the object
+    expense_id = expense.id
+    expense_title = expense.title
+    expense_amount = float(expense.amount)
+    expense_paid_by = expense.paid_by
+
     await db.commit()
+
+    from services.notification import NotificationService
+    svc = NotificationService(db)
+    await svc.notify_group_expense_added(
+        group_id=group_id,
+        group_name=group_name,
+        expense_id=expense_id,
+        expense_title=expense_title,
+        expense_amount=expense_amount,
+        currency=currency,
+        payer_name=payer_name,
+        payer_id=expense_paid_by,
+        member_ids=member_ids,
+    )
+    await db.commit()
+
     return _expense_to_response(expense)
 
 

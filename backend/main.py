@@ -21,6 +21,7 @@ import models.subscription  # noqa: F401
 import models.group  # noqa: F401
 import models.group_expense  # noqa: F401
 import models.settlement  # noqa: F401
+import models.notification  # noqa: F401
 
 # ── System category seed data ──────────────────────────────────────────────────
 SYSTEM_CATEGORIES = [
@@ -53,7 +54,10 @@ async def seed_categories() -> None:
 async def lifespan(app: FastAPI):
     await create_tables()
     await seed_categories()
+    from scheduler import start_scheduler, stop_scheduler
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 app = FastAPI(
@@ -146,6 +150,7 @@ from routes.groups import router as groups_router                      # noqa: E
 from routes.group_expenses import router as group_expenses_router      # noqa: E402
 from routes.settlements import router as settlements_router            # noqa: E402
 from routes.reports import router as reports_router                    # noqa: E402
+from routes.notifications import router as notifications_router        # noqa: E402
 
 app.include_router(auth_router,            prefix="/api/v1/auth",          tags=["auth"])
 app.include_router(users_router,           prefix="/api/v1/users",          tags=["users"])
@@ -156,3 +161,4 @@ app.include_router(groups_router,          prefix="/api/v1/groups",         tags
 app.include_router(group_expenses_router,  prefix="/api/v1/groups",         tags=["group-expenses"])
 app.include_router(settlements_router,     prefix="/api/v1/groups",         tags=["settlements"])
 app.include_router(reports_router,         prefix="/api/v1/reports",        tags=["reports"])
+app.include_router(notifications_router,   prefix="/api/v1/notifications",  tags=["notifications"])

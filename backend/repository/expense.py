@@ -4,7 +4,7 @@ import math
 from datetime import date as Date
 from typing import Optional, Sequence
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, extract, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -61,6 +61,18 @@ class ExpenseRepository(BaseRepository[Expense]):
         )
         rows = (await self.session.execute(q)).scalars().all()
         return rows, total
+
+    async def get_month_total(self, user_id: str, year: int, month: int) -> float:
+        """Sum of all 'expense' type entries for the given user/year/month."""
+        result = await self.session.execute(
+            select(func.sum(Expense.amount)).where(
+                Expense.user_id == user_id,
+                Expense.type == "expense",
+                extract("year", Expense.date) == year,
+                extract("month", Expense.date) == month,
+            )
+        )
+        return float(result.scalar_one_or_none() or 0.0)
 
     async def get_user_expense(
         self, expense_id: str, user_id: str

@@ -87,6 +87,11 @@ async def record_settlement(
     if not await group_repo.is_member(group_id, payload.payee_id):
         raise HTTPException(status_code=422, detail="Payee is not a member of this group")
 
+    # Capture before commit — db.commit() expires all loaded ORM objects
+    group_name = group.name
+    payer_name = current_user.name
+    payer_currency = current_user.currency
+
     repo = SettlementRepository(db)
     settlement = await repo.create(
         group_id=group_id,
@@ -96,5 +101,21 @@ async def record_settlement(
         date=payload.date,
         note=payload.note,
     )
+    settlement_id = settlement.id  # capture before commit expires it
     await db.commit()
+
+    # Notify the payee
+    from services.notification import NotificationService
+    svc = NotificationService(db)
+    await svc.notify_settlement_created(
+        group_id=group_id,
+        group_name=group_name,
+        settlement_id=settlement_id,
+        payee_id=payload.payee_id,
+        payer_name=payer_name,
+        amount=float(payload.amount),
+        currency=payer_currency,
+    )
+    await db.commit()
+
     return _settlement_to_response(settlement)

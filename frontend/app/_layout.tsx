@@ -3,9 +3,20 @@ import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/auth-context';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 // ── Protected routing ──────────────────────────────────────────────────────
 // Runs inside AuthProvider so it can read auth state.
@@ -21,13 +32,27 @@ function RootNavigator() {
     const inAuthGroup = segments[0] === 'auth';
 
     if (!user && !inAuthGroup) {
-      // Not logged in — send to login
       router.replace('/auth/login');
     } else if (user && inAuthGroup) {
-      // Already logged in — send to app
       router.replace('/(tabs)');
     }
   }, [user, isLoading, segments]);
+
+  // Handle notification tap — deep link into the relevant screen
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as Record<string, string>;
+      if (!data?.screen) return;
+      if (data.screen === 'group' && data.groupId) {
+        router.push(`/group/${data.groupId}`);
+      } else if (data.screen === 'subscription' && data.subscriptionId) {
+        router.push(`/subscription/${data.subscriptionId}`);
+      } else if (data.screen === 'reports') {
+        router.push('/(tabs)/reports');
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   if (isLoading) {
     return (

@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
 import { getInitials } from '@/services/user';
 import { ApiError } from '@/services/api';
+import { NotificationPreferences } from '@/components/profile/notification-preferences';
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD'];
 
@@ -352,6 +353,14 @@ export default function ProfileScreen() {
               <SettingRow icon="🌙" label="Theme" value={user.theme === 'dark' ? 'Dark' : 'Light'} />
             </Card>
           </View>
+
+          {/* Per-type notification toggles — only shown when master switch is on */}
+          {user.notificationsEnabled && (
+            <View>
+              <ThemedText variant="label" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>NOTIFICATION TYPES</ThemedText>
+              <NotificationPreferences />
+            </View>
+          )}
 
           {/* More */}
           <View>
