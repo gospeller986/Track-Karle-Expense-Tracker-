@@ -230,9 +230,7 @@ export function getCategoryById(id: string): Category {
 }
 
 export function formatCurrency(amount: number, currency = '₹'): string {
-  if (amount >= 100000) return `${currency}${(amount / 100000).toFixed(1)}L`;
-  if (amount >= 1000)   return `${currency}${(amount / 1000).toFixed(1)}K`;
-  return `${currency}${amount.toLocaleString('en-IN')}`;
+  return `${currency}${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 export function formatDate(isoString: string): string {

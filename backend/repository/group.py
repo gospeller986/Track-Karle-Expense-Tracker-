@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from models.group import Group, GroupMember
 from models.group_expense import GroupExpense, GroupExpenseSplit
+from models.settlement import Settlement
 from models.user import User
 
 
@@ -110,13 +111,13 @@ class GroupRepository:
     # ── Balance computation ───────────────────────────────────────────────────
 
     async def compute_balance(self, group_id: str, user_id: str) -> tuple[float, float]:
-        """Returns (your_balance, total_expenses). Positive balance = owed to you."""
-        result = await self._s.execute(
+        """Returns (your_balance, total_expenses). Positive balance = group owes you."""
+        exp_result = await self._s.execute(
             select(GroupExpense)
             .where(GroupExpense.group_id == group_id)
             .options(selectinload(GroupExpense.splits))
         )
-        expenses = result.scalars().all()
+        expenses = exp_result.scalars().all()
 
         total = sum(float(e.amount) for e in expenses)
         balance = 0.0
@@ -124,9 +125,80 @@ class GroupRepository:
             if exp.paid_by == user_id:
                 balance += float(exp.amount)
             for split in exp.splits:
-                if split.user_id == user_id and not split.is_settled:
+                if split.user_id == user_id:
                     balance -= float(split.amount)
-        return round(balance, 2), round(total, 2)
+
+        # Adjust for settlements
+        set_result = await self._s.execute(
+            select(Settlement).where(Settlement.group_id == group_id)
+        )
+        for s in set_result.scalars().all():
+            if s.payer_id == user_id:
+                balance += float(s.amount)   # paid back debt → net goes up
+            elif s.payee_id == user_id:
+                balance -= float(s.amount)   # received payment → net goes down
+
+        return balance, total
+
+    async def compute_pairwise_balances(
+        self, group_id: str, member_ids: list[str], member_names: dict[str, str]
+    ) -> list[dict]:
+        """
+        Returns minimal set of debts: [{ from_user_id, from_user_name, to_user_id, to_user_name, amount }].
+        Uses debt-minimization (Splitwise algorithm).
+        """
+        # Build net position for each member: positive = owed to them, negative = they owe
+        net: dict[str, float] = {uid: 0.0 for uid in member_ids}
+
+        exp_result = await self._s.execute(
+            select(GroupExpense)
+            .where(GroupExpense.group_id == group_id)
+            .options(selectinload(GroupExpense.splits))
+        )
+        for exp in exp_result.scalars().all():
+            if exp.paid_by in net:
+                net[exp.paid_by] += float(exp.amount)
+            for split in exp.splits:
+                if split.user_id in net:
+                    net[split.user_id] -= float(split.amount)
+
+        set_result = await self._s.execute(
+            select(Settlement).where(Settlement.group_id == group_id)
+        )
+        for s in set_result.scalars().all():
+            if s.payer_id in net:
+                net[s.payer_id] += float(s.amount)
+            if s.payee_id in net:
+                net[s.payee_id] -= float(s.amount)
+
+        # Debt minimization: greedy match biggest debtor ↔ biggest creditor
+        debtors  = sorted([(uid, v) for uid, v in net.items() if v < -0.01], key=lambda x: x[1])
+        creditors = sorted([(uid, v) for uid, v in net.items() if v > 0.01], key=lambda x: -x[1])
+
+        debts: list[dict] = []
+        i, j = 0, 0
+        debtors  = [list(d) for d in debtors]   # make mutable
+        creditors = [list(c) for c in creditors]
+
+        while i < len(debtors) and j < len(creditors):
+            debtor_id, debt     = debtors[i]
+            creditor_id, credit = creditors[j]
+            amount = min(abs(debt), credit)
+            debts.append({
+                "from_user_id":   debtor_id,
+                "from_user_name": member_names.get(debtor_id, debtor_id),
+                "to_user_id":     creditor_id,
+                "to_user_name":   member_names.get(creditor_id, creditor_id),
+                "amount":         amount,
+            })
+            debtors[i][1]  = debt + amount
+            creditors[j][1] = credit - amount
+            if abs(debtors[i][1]) < 0.01:
+                i += 1
+            if abs(creditors[j][1]) < 0.01:
+                j += 1
+
+        return debts
 
     # ── Friends (implicit: co-members across groups) ──────────────────────────
 

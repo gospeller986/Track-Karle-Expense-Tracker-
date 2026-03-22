@@ -54,6 +54,7 @@ function RootNavigator() {
       <Stack.Screen name="group/invite"      options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="group/scan"        options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="group/add-expense" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="group/settle"      options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="join/[token]"      options={{ presentation: 'modal', animation: 'fade' }} />
       <Stack.Screen name="modal"             options={{ presentation: 'modal' }} />
     </Stack>

@@ -137,16 +137,20 @@ async def join_redirect(token: str, request: Request):
 
 
 # ── Routers ────────────────────────────────────────────────────────────────────
-from routes.auth import router as auth_router              # noqa: E402
-from routes.users import router as users_router            # noqa: E402
-from routes.categories import router as categories_router  # noqa: E402
-from routes.expenses import router as expenses_router            # noqa: E402
-from routes.subscriptions import router as subscriptions_router  # noqa: E402
-from routes.groups import router as groups_router                # noqa: E402
+from routes.auth import router as auth_router                          # noqa: E402
+from routes.users import router as users_router                        # noqa: E402
+from routes.categories import router as categories_router              # noqa: E402
+from routes.expenses import router as expenses_router                  # noqa: E402
+from routes.subscriptions import router as subscriptions_router        # noqa: E402
+from routes.groups import router as groups_router                      # noqa: E402
+from routes.group_expenses import router as group_expenses_router      # noqa: E402
+from routes.settlements import router as settlements_router            # noqa: E402
 
-app.include_router(auth_router,           prefix="/api/v1/auth",          tags=["auth"])
-app.include_router(users_router,          prefix="/api/v1/users",          tags=["users"])
-app.include_router(categories_router,     prefix="/api/v1/categories",     tags=["categories"])
-app.include_router(expenses_router,       prefix="/api/v1/expenses",       tags=["expenses"])
-app.include_router(subscriptions_router,  prefix="/api/v1/subscriptions",  tags=["subscriptions"])
-app.include_router(groups_router,         prefix="/api/v1/groups",         tags=["groups"])
+app.include_router(auth_router,            prefix="/api/v1/auth",          tags=["auth"])
+app.include_router(users_router,           prefix="/api/v1/users",          tags=["users"])
+app.include_router(categories_router,      prefix="/api/v1/categories",     tags=["categories"])
+app.include_router(expenses_router,        prefix="/api/v1/expenses",       tags=["expenses"])
+app.include_router(subscriptions_router,   prefix="/api/v1/subscriptions",  tags=["subscriptions"])
+app.include_router(groups_router,          prefix="/api/v1/groups",         tags=["groups"])
+app.include_router(group_expenses_router,  prefix="/api/v1/groups",         tags=["group-expenses"])
+app.include_router(settlements_router,     prefix="/api/v1/groups",         tags=["settlements"])

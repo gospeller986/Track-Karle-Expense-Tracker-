@@ -1,25 +1,37 @@
 from __future__ import annotations
 from datetime import date, datetime
-from typing import Literal
+from typing import Literal, Optional
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic.alias_generators import to_camel
 
 
-class SplitEntry(BaseModel):
+class _CamelModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+    )
+
+
+# ── Request schemas ────────────────────────────────────────────────────────────
+
+class SplitEntry(_CamelModel):
     user_id: str
-    amount: float | None = None
-    percentage: float | None = None
+    amount: Optional[float] = None
+    percentage: Optional[float] = None
 
 
-class GroupExpenseCreate(BaseModel):
+class GroupExpenseCreate(_CamelModel):
     category_id: str
     title: str
     amount: float
     date: date
+    paid_by: str                                     # user_id who paid
     split_type: Literal["equal", "unequal", "percentage"]
-    split_with: list[str]                # user_ids to split with
-    splits: list[SplitEntry] | None = None
-    note: str | None = None
+    split_with: list[str]                            # user_ids included in split
+    splits: Optional[list[SplitEntry]] = None        # required for unequal / percentage
+    note: Optional[str] = None
 
     @field_validator("amount")
     @classmethod
@@ -45,27 +57,31 @@ class GroupExpenseCreate(BaseModel):
         return self
 
 
-class GroupExpenseSplitResponse(BaseModel):
+# ── Response schemas ───────────────────────────────────────────────────────────
+
+class GroupExpenseSplitResponse(_CamelModel):
     user_id: str
+    user_name: str
     amount: float
-    percentage: float | None
+    percentage: Optional[float] = None
     is_settled: bool
 
-    model_config = {"from_attributes": True}
 
-
-class GroupExpenseResponse(BaseModel):
+class GroupExpenseResponse(_CamelModel):
     id: str
     group_id: str
     category_id: str
     paid_by: str
+    paid_by_name: str
     title: str
     amount: float
     date: date
     split_type: str
-    note: str | None
+    note: Optional[str] = None
     is_settled: bool
     splits: list[GroupExpenseSplitResponse]
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+
+class GroupExpenseListResponse(_CamelModel):
+    data: list[GroupExpenseResponse]
