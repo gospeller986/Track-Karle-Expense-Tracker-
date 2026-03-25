@@ -15,7 +15,7 @@ function getApiBase(): string {
     const host = hostUri.split(':')[0]; // e.g. "192.168.1.3"
     return `http://${host}:8000/api/v1`;
   }
-  // Fallback for production builds or simulators
+  // Fallback for production builds (APK/standalone)
   return process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 }
 

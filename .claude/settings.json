@@ -5,7 +5,9 @@
       "Bash(uv run python -c \":*)",
       "Bash(curl -s http://localhost:8000/health)",
       "Bash(pkill -f \"uvicorn main:app\")",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(curl -s https://track-karle-expense-tracker.onrender.com/health)",
+      "Bash(curl -s --max-time 30 https://track-karle-expense-tracker.onrender.com/health)"
     ]
   }
 }
