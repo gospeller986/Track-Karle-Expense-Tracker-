@@ -5,11 +5,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+import asyncio
 import os
 from alembic.config import Config as AlembicConfig
 from alembic import command as alembic_command
 
 from config import settings
+
+
+def _run_migrations() -> None:
+    """Run Alembic migrations synchronously (called in a thread to avoid nested event loops)."""
+    alembic_cfg = AlembicConfig(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+    alembic_command.upgrade(alembic_cfg, "head")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("app")
@@ -55,8 +62,7 @@ async def seed_categories() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    alembic_cfg = AlembicConfig(os.path.join(os.path.dirname(__file__), "alembic.ini"))
-    alembic_command.upgrade(alembic_cfg, "head")
+    await asyncio.to_thread(_run_migrations)
     await seed_categories()
     from scheduler import start_scheduler, stop_scheduler
     start_scheduler()
