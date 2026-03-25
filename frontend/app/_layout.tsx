@@ -69,7 +69,7 @@ function RootNavigator() {
 
       {/* App group */}
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="expense/add"         options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="expense/add"         options={{ animation: 'slide_from_bottom' }} />
       <Stack.Screen name="expense/[id]"        options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="subscription/add"    options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="subscription/[id]"   options={{ animation: 'slide_from_right' }} />

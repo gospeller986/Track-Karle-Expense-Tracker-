@@ -1,7 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
+
+import { expenseRefreshBus } from '@/utils/refresh-bus';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useUser } from '@/hooks/use-user';
@@ -90,11 +92,6 @@ export default function HomeScreen() {
   const year  = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  // First day / last day of current month for filtering
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const lastDay   = new Date(year, month, 0).getDate();
-  const endDate   = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
   const { user, initials, refetch: refetchUser }           = useUser();
   const { summary, spendingTrend, refetch: refetchReports } = useReports(year, month);
   const { expenses: recent, refetch: refetchExpenses }      = useExpenses({ limit: 5 });
@@ -108,6 +105,14 @@ export default function HomeScreen() {
     refetchSubs();
     refetchGroups();
   }, [refetchUser, refetchReports, refetchExpenses, refetchSubs, refetchGroups]));
+
+  // Refresh when expense/income modal is dismissed
+  useEffect(() => {
+    return expenseRefreshBus.subscribe(() => {
+      refetchReports();
+      refetchExpenses();
+    });
+  }, [refetchReports, refetchExpenses]);
 
   const monthLabel = MONTH_NAMES[now.getMonth()].toUpperCase();
 

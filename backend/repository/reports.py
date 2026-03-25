@@ -3,7 +3,7 @@ from __future__ import annotations
 import calendar
 from datetime import date as Date, timedelta
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.category import Category
@@ -95,16 +95,18 @@ class ReportsRepository:
             start_year -= 1
         start_date = Date(start_year, start_month, 1)
 
+        yr_expr = extract("year", Expense.date)
+        mo_expr = extract("month", Expense.date)
         q = (
             select(
-                func.strftime("%Y", Expense.date).label("yr"),
-                func.strftime("%m", Expense.date).label("mo"),
+                yr_expr.label("yr"),
+                mo_expr.label("mo"),
                 Expense.type,
                 func.sum(Expense.amount).label("total"),
             )
             .where(and_(Expense.user_id == user_id, Expense.date >= start_date))
-            .group_by("yr", "mo", Expense.type)
-            .order_by("yr", "mo")
+            .group_by(yr_expr, mo_expr, Expense.type)
+            .order_by(yr_expr, mo_expr)
         )
         rows = (await self.session.execute(q)).all()
 

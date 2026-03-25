@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useCategories } from '@/hooks/use-categories';
 import { createExpense } from '@/services/expense';
+import { expenseRefreshBus } from '@/utils/refresh-bus';
 import type { ExpenseType } from '@/types/expense';
 
 function todayISO(): string {
@@ -60,6 +61,7 @@ export default function AddExpenseScreen() {
         date:       todayISO(),
         note:       note.trim() || undefined,
       });
+      expenseRefreshBus.emit();
       router.back();
     } catch (e) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save. Please try again.');

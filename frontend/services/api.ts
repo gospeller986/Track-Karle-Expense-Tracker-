@@ -8,15 +8,22 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
 function getApiBase(): string {
-  // In Expo Go / dev builds, hostUri is the Metro bundler host (e.g. "192.168.1.3:8081").
-  // Strip the port and replace with the backend port.
+  const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+  // If explicitly configured to a non-localhost URL (deployed backend),
+  // always use it — even in Expo Go dev mode.
+  if (envUrl && !envUrl.includes('localhost')) {
+    return envUrl;
+  }
+
+  // In Expo Go / dev builds with local backend, derive host from Metro bundler.
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
     const host = hostUri.split(':')[0]; // e.g. "192.168.1.3"
     return `http://${host}:8000/api/v1`;
   }
-  // Fallback for production builds (APK/standalone)
-  return process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
+
+  return envUrl ?? 'http://localhost:8000/api/v1';
 }
 
 export const API_BASE = getApiBase();
