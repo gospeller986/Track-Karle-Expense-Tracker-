@@ -5,8 +5,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+import os
+from alembic.config import Config as AlembicConfig
+from alembic import command as alembic_command
+
 from config import settings
-from database import create_tables
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("app")
@@ -52,7 +55,8 @@ async def seed_categories() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await create_tables()
+    alembic_cfg = AlembicConfig(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+    alembic_command.upgrade(alembic_cfg, "head")
     await seed_categories()
     from scheduler import start_scheduler, stop_scheduler
     start_scheduler()

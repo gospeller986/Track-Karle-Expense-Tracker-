@@ -4,11 +4,18 @@ from sqlalchemy.orm import DeclarativeBase
 
 from config import settings
 
+_is_sqlite = not settings.is_postgres
+
 engine = create_async_engine(
-    settings.database_url,
+    settings.async_database_url,
     echo=settings.debug,
-    # For SQLite: check_same_thread not needed with async driver
-    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {},
+    connect_args={"check_same_thread": False} if _is_sqlite else {"ssl": "require"},
+    **({} if _is_sqlite else {
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_timeout": 30,
+        "pool_pre_ping": True,   # detect stale connections (Neon auto-pauses)
+    }),
 )
 
 AsyncSessionLocal = async_sessionmaker(
