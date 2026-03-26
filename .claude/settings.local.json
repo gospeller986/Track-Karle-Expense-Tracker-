@@ -35,7 +35,28 @@
       "Bash(.venv/bin/pip install:*)",
       "Bash(.venv/bin/uv add:*)",
       "Bash(uv --version)",
-      "Bash(uv add:*)"
+      "Bash(uv add:*)",
+      "Bash(java -version)",
+      "Bash(/usr/libexec/java_home -V)",
+      "Bash(echo \"ANDROID_HOME: $ANDROID_HOME\")",
+      "Bash(echo \"JAVA_HOME: $JAVA_HOME\")",
+      "Read(//Users/satyajitpal/Library/Android/**)",
+      "Read(//usr/local/share/**)",
+      "Bash(brew --version)",
+      "Bash(brew list:*)",
+      "Read(//opt/homebrew/opt/**)",
+      "Read(//Library/Java/JavaVirtualMachines/**)",
+      "Read(//opt/homebrew/Cellar/openjdk@17/17.0.18/libexec/openjdk.jdk/Contents/Home/bin/**)",
+      "Bash(/opt/homebrew/opt/openjdk@17/bin/java -version)",
+      "Bash(echo $SHELL)",
+      "Read(//Users/satyajitpal/**)",
+      "Bash(brew install:*)",
+      "Bash(JAVA_HOME=/opt/homebrew/opt/openjdk@17 ANDROID_SDK_ROOT=/opt/homebrew/share/android-commandlinetools sdkmanager --licenses)",
+      "Bash(yes)",
+      "Bash(JAVA_HOME=/opt/homebrew/opt/openjdk@17 ANDROID_SDK_ROOT=/opt/homebrew/share/android-commandlinetools sdkmanager \"platform-tools\" \"build-tools;35.0.0\" \"platforms;android-35\")",
+      "Bash(source ~/.zshrc)",
+      "Bash(adb --version)",
+      "Bash(sdkmanager --list_installed)"
     ]
   }
 }

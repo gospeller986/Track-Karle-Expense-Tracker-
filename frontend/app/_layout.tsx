@@ -4,7 +4,6 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { AppThemeProvider } from '@/context/theme-context';
