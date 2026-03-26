@@ -10,7 +10,8 @@
       "Bash(curl -s --max-time 30 https://track-karle-expense-tracker.onrender.com/health)",
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(curl -s \"https://track-karle-expense-tracker.onrender.com/api/v1/reports/summary?year=2026&month=3\" -H \"Authorization: Bearer test\")",
-      "Bash(curl -s --max-time 15 \"https://track-karle-expense-tracker.onrender.com/api/v1/reports/summary?year=2026&month=3\" -H \"Authorization: Bearer invalid\")"
+      "Bash(curl -s --max-time 15 \"https://track-karle-expense-tracker.onrender.com/api/v1/reports/summary?year=2026&month=3\" -H \"Authorization: Bearer invalid\")",
+      "Bash(node -e \":*)"
     ]
   }
 }

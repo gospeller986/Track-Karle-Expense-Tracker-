@@ -4,6 +4,7 @@ import type {
   SpendingTrendResponse,
   CategoryBreakdownResponse,
   WeeklyTrendResponse,
+  HeatmapResponse,
 } from '@/interfaces/reports';
 
 export function getSummary(year?: number, month?: number): Promise<ReportSummary> {
@@ -28,4 +29,8 @@ export function getCategoryBreakdown(year?: number, month?: number): Promise<Cat
   if (month) params.set('month', String(month));
   const qs = params.toString() ? `?${params}` : '';
   return apiFetch<CategoryBreakdownResponse>(`/reports/category-breakdown${qs}`, { auth: true });
+}
+
+export function getHeatmap(days = 84): Promise<HeatmapResponse> {
+  return apiFetch<HeatmapResponse>(`/reports/heatmap?days=${days}`, { auth: true });
 }

@@ -3,11 +3,13 @@ from __future__ import annotations
 import calendar
 from datetime import date as Date, timedelta
 
-from sqlalchemy import and_, extract, func, select
+from sqlalchemy import and_, func, or_, select, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.category import Category
 from models.expense import Expense
+from models.group import GroupMember
+from models.group_expense import GroupExpense
 
 MONTH_NAMES = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -95,8 +97,8 @@ class ReportsRepository:
             start_year -= 1
         start_date = Date(start_year, start_month, 1)
 
-        yr_expr = extract("year", Expense.date)
-        mo_expr = extract("month", Expense.date)
+        yr_expr = func.date_part("year", Expense.date)
+        mo_expr = func.date_part("month", Expense.date)
         q = (
             select(
                 yr_expr.label("yr"),
@@ -160,7 +162,7 @@ class ReportsRepository:
                     Expense.date <= last_day,
                 )
             )
-            .group_by(Expense.category_id)
+            .group_by(Expense.category_id, Category.name, Category.icon, Category.color)
             .order_by(func.sum(Expense.amount).desc())
         )
         rows = (await self.session.execute(q)).all()
@@ -228,3 +230,54 @@ class ReportsRepository:
                     break
 
         return week_data
+
+    # ── Heatmap ────────────────────────────────────────────────────────────────
+
+    async def get_heatmap(self, user_id: str, days: int = 84) -> dict:
+        today = Date.today()
+        since = today - timedelta(days=days - 1)
+
+        # Personal expenses (any type)
+        personal_q = select(Expense.date.label("d")).where(
+            and_(Expense.user_id == user_id, Expense.date >= since)
+        )
+
+        # Group activity: any day the user's group logged an expense
+        group_q = (
+            select(GroupExpense.date.label("d"))
+            .join(GroupMember, GroupMember.group_id == GroupExpense.group_id)
+            .where(and_(GroupMember.user_id == user_id, GroupExpense.date >= since))
+        )
+
+        combined = union(personal_q, group_q).subquery()
+        distinct_q = select(func.distinct(combined.c.d))
+        result = await self.session.execute(distinct_q)
+        active_dates: set[str] = {row[0].isoformat() for row in result.fetchall()}
+
+        # Current streak (count consecutive days back from today; today counts
+        # even if the user hasn't logged yet — don't punish mid-day)
+        current_streak = 0
+        check = today
+        while check.isoformat() in active_dates or check == today:
+            if check.isoformat() in active_dates:
+                current_streak += 1
+            elif check != today:
+                break
+            check -= timedelta(days=1)
+
+        # Longest streak across the window
+        longest_streak = 0
+        run = 0
+        for i in range(days):
+            d = (since + timedelta(days=i)).isoformat()
+            if d in active_dates:
+                run += 1
+                longest_streak = max(longest_streak, run)
+            else:
+                run = 0
+
+        return {
+            "active_days": sorted(active_dates),
+            "current_streak": current_streak,
+            "longest_streak": longest_streak,
+        }

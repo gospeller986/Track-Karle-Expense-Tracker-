@@ -27,6 +27,7 @@ function getApiBase(): string {
 }
 
 export const API_BASE = getApiBase();
+console.log('[API] base URL:', API_BASE);
 
 export class ApiError extends Error {
   constructor(

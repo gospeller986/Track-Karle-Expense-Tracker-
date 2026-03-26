@@ -51,3 +51,9 @@ export interface WeeklyTrend {
 export interface WeeklyTrendResponse {
   data: WeeklyTrend[];
 }
+
+export interface HeatmapResponse {
+  activeDays: string[];       // ISO date strings e.g. ["2026-03-01", ...]
+  currentStreak: number;
+  longestStreak: number;
+}

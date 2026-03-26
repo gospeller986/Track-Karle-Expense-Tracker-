@@ -66,3 +66,9 @@ class WeeklyTrend(_CamelModel):
 
 class WeeklyTrendResponse(_CamelModel):
     data: list[WeeklyTrend]
+
+
+class HeatmapResponse(_CamelModel):
+    active_days: list[str]      # ISO date strings e.g. ["2026-03-01", ...]
+    current_streak: int
+    longest_streak: int

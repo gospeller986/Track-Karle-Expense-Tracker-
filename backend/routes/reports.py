@@ -13,6 +13,7 @@ from routes.auth import get_current_user
 from schemas.reports import (
     CategoryBreakdown,
     CategoryBreakdownResponse,
+    HeatmapResponse,
     LargestExpense,
     MonthlyTrend,
     ReportSummary,
@@ -103,3 +104,16 @@ async def get_category_breakdown(
         year=year,
         month=month,
     )
+
+
+# ── GET /reports/heatmap ───────────────────────────────────────────────────────
+
+@router.get("/heatmap", response_model=HeatmapResponse, response_model_by_alias=True)
+async def get_heatmap(
+    days: int = Query(default=84, ge=28, le=365),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> HeatmapResponse:
+    repo = ReportsRepository(db)
+    data = await repo.get_heatmap(current_user.id, days)
+    return HeatmapResponse(**data)

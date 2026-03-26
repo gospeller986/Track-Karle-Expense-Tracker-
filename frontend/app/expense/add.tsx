@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View, ScrollView, TouchableOpacity, StyleSheet, StatusBar,
   TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useCategories } from '@/hooks/use-categories';
+import { useSound } from '@/hooks/use-sound';
 import { createExpense } from '@/services/expense';
 import { expenseRefreshBus } from '@/utils/refresh-bus';
 import type { ExpenseType } from '@/types/expense';
@@ -23,10 +26,70 @@ function todayISO(): string {
   return `${y}-${m}-${day}`;
 }
 
+// ─── Animated category chip ────────────────────────────────────
+
+interface CatChipItem {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
+function CatChip({
+  cat, isSelected, onPress, colors, radii,
+}: {
+  cat: CatChipItem;
+  isSelected: boolean;
+  onPress: (id: string) => void;
+  colors: ReturnType<typeof useTheme>['colors'];
+  radii: ReturnType<typeof useTheme>['radii'];
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  function handlePress() {
+    scale.setValue(1);
+    Animated.sequence([
+      Animated.spring(scale, { toValue: 1.2, useNativeDriver: true, speed: 60, bounciness: 10 }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 4 }),
+    ]).start();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress(cat.id);
+  }
+
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+      <Animated.View
+        style={[
+          styles.catChip,
+          {
+            backgroundColor: isSelected ? cat.color + '22' : colors.surface,
+            borderColor: isSelected ? cat.color : colors.border,
+            borderRadius: radii.xl,
+            borderWidth: 1,
+            transform: [{ scale }],
+          },
+        ]}
+      >
+        <ThemedText style={{ fontSize: 22 }}>{cat.icon}</ThemedText>
+        <ThemedText
+          variant="caption"
+          color={isSelected ? cat.color : colors.textSecondary}
+          style={{ marginTop: 4 }}
+        >
+          {cat.name.split(' ')[0]}
+        </ThemedText>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Main Screen ───────────────────────────────────────────────
+
 export default function AddExpenseScreen() {
   const { colors, spacing, radii } = useTheme();
   const router = useRouter();
   const { categories, isLoading: catsLoading } = useCategories();
+  const { play } = useSound();
 
   const [type, setType]               = useState<ExpenseType>('expense');
   const [amount, setAmount]           = useState('');
@@ -34,19 +97,58 @@ export default function AddExpenseScreen() {
   const [selectedCat, setSelectedCat] = useState('');
   const [note, setNote]               = useState('');
   const [saving, setSaving]           = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const amountScale = useRef(new Animated.Value(1)).current;
+  const btnShakeX   = useRef(new Animated.Value(0)).current;
   const amountColor = type === 'expense' ? colors.expense : colors.income;
+
+  function handleTypeChange(t: ExpenseType) {
+    setType(t);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  function handleAmountChange(text: string) {
+    setAmount(text);
+    if (text) {
+      amountScale.setValue(1);
+      Animated.spring(amountScale, {
+        toValue: 1.04,
+        useNativeDriver: true,
+        speed: 80,
+        bounciness: 8,
+      }).start(() => {
+        Animated.spring(amountScale, { toValue: 1, useNativeDriver: true, speed: 25 }).start();
+      });
+    }
+  }
+
+  function shakeError() {
+    btnShakeX.setValue(0);
+    Animated.sequence([
+      Animated.timing(btnShakeX, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(btnShakeX, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(btnShakeX, { toValue: 7, duration: 45, useNativeDriver: true }),
+      Animated.timing(btnShakeX, { toValue: -7, duration: 45, useNativeDriver: true }),
+      Animated.timing(btnShakeX, { toValue: 0, duration: 40, useNativeDriver: true }),
+    ]).start();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    play('error');
+  }
 
   async function handleSave() {
     if (!amount || parseFloat(amount) <= 0) {
+      shakeError();
       Alert.alert('Invalid amount', 'Please enter an amount greater than 0.');
       return;
     }
     if (!title.trim()) {
+      shakeError();
       Alert.alert('Title required', 'Please enter a title for this transaction.');
       return;
     }
     if (!selectedCat) {
+      shakeError();
       Alert.alert('Category required', 'Please select a category.');
       return;
     }
@@ -62,8 +164,13 @@ export default function AddExpenseScreen() {
         note:       note.trim() || undefined,
       });
       expenseRefreshBus.emit();
+      setSaveSuccess(true);
+      play(type === 'income' ? 'income' : 'expense');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await new Promise(r => setTimeout(r, 650));
       router.back();
     } catch (e) {
+      shakeError();
       Alert.alert('Error', e instanceof Error ? e.message : 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
@@ -92,7 +199,7 @@ export default function AddExpenseScreen() {
               {(['expense', 'income'] as ExpenseType[]).map(t => (
                 <TouchableOpacity
                   key={t}
-                  onPress={() => setType(t)}
+                  onPress={() => handleTypeChange(t)}
                   style={[
                     styles.typeBtn,
                     { borderRadius: radii.lg, borderWidth: 1.5 },
@@ -119,18 +226,18 @@ export default function AddExpenseScreen() {
               <ThemedText variant="h4" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
                 AMOUNT
               </ThemedText>
-              <View style={styles.amountRow}>
+              <Animated.View style={[styles.amountRow, { transform: [{ scale: amountScale }] }]}>
                 <ThemedText variant="h2" color={amountColor}>₹</ThemedText>
                 <TextInput
                   value={amount}
-                  onChangeText={setAmount}
+                  onChangeText={handleAmountChange}
                   keyboardType="decimal-pad"
                   placeholder="0"
                   placeholderTextColor={colors.textTertiary}
                   style={[styles.amountInput, { color: amountColor, fontSize: 56, fontWeight: '800' }]}
                   autoFocus
                 />
-              </View>
+              </Animated.View>
               <View style={[styles.amountUnderline, { backgroundColor: amountColor + '44' }]} />
             </View>
 
@@ -160,29 +267,16 @@ export default function AddExpenseScreen() {
                 {catsLoading && (
                   <ActivityIndicator color={colors.accent} style={{ marginLeft: spacing.xl }} />
                 )}
-                {categories.map(cat => {
-                  const isSelected = selectedCat === cat.id;
-                  return (
-                    <TouchableOpacity
-                      key={cat.id}
-                      onPress={() => setSelectedCat(cat.id)}
-                      style={[
-                        styles.catChip,
-                        {
-                          backgroundColor: isSelected ? cat.color + '22' : colors.surface,
-                          borderColor:     isSelected ? cat.color : colors.border,
-                          borderRadius: radii.xl,
-                          borderWidth: 1,
-                        },
-                      ]}
-                    >
-                      <ThemedText style={{ fontSize: 22 }}>{cat.icon}</ThemedText>
-                      <ThemedText variant="caption" color={isSelected ? cat.color : colors.textSecondary} style={{ marginTop: 4 }}>
-                        {cat.name.split(' ')[0]}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  );
-                })}
+                {categories.map(cat => (
+                  <CatChip
+                    key={cat.id}
+                    cat={cat}
+                    isSelected={selectedCat === cat.id}
+                    onPress={setSelectedCat}
+                    colors={colors}
+                    radii={radii}
+                  />
+                ))}
               </ScrollView>
             </View>
 
@@ -205,16 +299,17 @@ export default function AddExpenseScreen() {
             </View>
 
             {/* Save button */}
-            <View style={{ paddingHorizontal: spacing.xl }}>
+            <Animated.View style={{ paddingHorizontal: spacing.xl, transform: [{ translateX: btnShakeX }] }}>
               <Button
-                label={saving ? 'Saving…' : 'Save Transaction'}
+                label={saveSuccess ? '✓ Saved!' : saving ? 'Saving…' : 'Save Transaction'}
                 variant="primary"
                 size="lg"
                 fullWidth
                 onPress={handleSave}
-                disabled={saving}
+                disabled={saving || saveSuccess}
+                style={saveSuccess ? { backgroundColor: colors.income } : undefined}
               />
-            </View>
+            </Animated.View>
 
           </View>
         </ScrollView>

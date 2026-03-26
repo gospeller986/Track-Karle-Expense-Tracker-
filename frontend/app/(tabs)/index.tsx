@@ -11,12 +11,18 @@ import { useExpenses } from '@/hooks/use-expenses';
 import { useSubscriptions } from '@/hooks/use-subscriptions';
 import { useGroups } from '@/hooks/use-groups';
 import { useReports } from '@/hooks/use-reports';
+import { useStreak } from '@/hooks/use-streak';
 import { ThemedText } from '@/components/themed-text';
 import { BalanceCard } from '@/components/home/balance-card';
+import { BalanceCardSkeleton } from '@/components/home/balance-card-skeleton';
 import { SpendingMiniChart } from '@/components/home/spending-mini-chart';
+import { SpendingChartSkeleton } from '@/components/home/spending-chart-skeleton';
 import { RecentTransactions } from '@/components/home/recent-transactions';
+import { RecentTransactionsSkeleton } from '@/components/home/recent-transactions-skeleton';
 import { UpcomingSubscriptions } from '@/components/home/upcoming-subscriptions';
 import { GroupBalances } from '@/components/home/group-balances';
+import { StreakCard } from '@/components/home/streak-card';
+import { StreakCardSkeleton } from '@/components/home/streak-card-skeleton';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -92,11 +98,16 @@ export default function HomeScreen() {
   const year  = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const { user, initials, refetch: refetchUser }           = useUser();
-  const { summary, spendingTrend, refetch: refetchReports } = useReports(year, month);
-  const { expenses: recent, refetch: refetchExpenses }      = useExpenses({ limit: 5 });
-  const { subscriptions, refetch: refetchSubs }             = useSubscriptions();
-  const { groups, refetch: refetchGroups }                  = useGroups();
+  const { user, initials, refetch: refetchUser }                        = useUser();
+  const { summary, spendingTrend, isLoading: reportsLoading,
+          refetch: refetchReports }                                      = useReports(year, month);
+  const { expenses: recent, isLoading: expensesLoading,
+          refetch: refetchExpenses }                                     = useExpenses({ limit: 5 });
+  const { subscriptions, refetch: refetchSubs }                         = useSubscriptions();
+  const { groups, refetch: refetchGroups }                              = useGroups();
+  const { activeDays, currentStreak, longestStreak,
+          streakJustIncremented, isLoading: streakLoading,
+          refetch: refetchStreak }                                       = useStreak();
 
   useFocusEffect(useCallback(() => {
     refetchUser();
@@ -104,7 +115,8 @@ export default function HomeScreen() {
     refetchExpenses();
     refetchSubs();
     refetchGroups();
-  }, [refetchUser, refetchReports, refetchExpenses, refetchSubs, refetchGroups]));
+    refetchStreak();
+  }, [refetchUser, refetchReports, refetchExpenses, refetchSubs, refetchGroups, refetchStreak]));
 
   // Refresh when expense/income modal is dismissed
   useEffect(() => {
@@ -126,15 +138,33 @@ export default function HomeScreen() {
       >
         <View style={{ gap: spacing['2xl'] }}>
           <Header name={user?.name ?? ''} initials={initials} />
-          <BalanceCard
-            totalIncome={summary?.totalIncome ?? 0}
-            totalExpenses={summary?.totalExpenses ?? 0}
-            monthlyBudget={user?.monthlyBudget ?? null}
-            monthLabel={monthLabel}
-          />
+          {reportsLoading
+            ? <BalanceCardSkeleton />
+            : <BalanceCard
+                totalIncome={summary?.totalIncome ?? 0}
+                totalExpenses={summary?.totalExpenses ?? 0}
+                monthlyBudget={user?.monthlyBudget ?? null}
+                monthLabel={monthLabel}
+              />
+          }
           <QuickActions />
-          <SpendingMiniChart data={spendingTrend} />
-          <RecentTransactions expenses={recent} />
+          {reportsLoading
+            ? <SpendingChartSkeleton />
+            : <SpendingMiniChart data={spendingTrend} />
+          }
+          {expensesLoading
+            ? <RecentTransactionsSkeleton />
+            : <RecentTransactions expenses={recent} />
+          }
+          {streakLoading
+            ? <StreakCardSkeleton />
+            : <StreakCard
+                activeDays={activeDays}
+                currentStreak={currentStreak}
+                longestStreak={longestStreak}
+                streakJustIncremented={streakJustIncremented}
+              />
+          }
           <UpcomingSubscriptions subscriptions={subscriptions} />
           <GroupBalances groups={groups} />
         </View>
