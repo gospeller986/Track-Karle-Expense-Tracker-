@@ -58,10 +58,10 @@ function QuickActions() {
   const router = useRouter();
 
   const actions = [
-    { label: 'Add\nExpense', icon: '＋', color: colors.accent,    textColor: colors.textOnAccent, route: '/expense/add'     },
-    { label: 'Split\nBill',  icon: '⇄',  color: colors.secondary, textColor: '#fff',              route: '/groups'          },
-    { label: 'Track\nSub',   icon: '○',  color: colors.surface,   textColor: colors.textPrimary,  route: '/subscriptions'   },
-    { label: 'Reports',      icon: '◎',  color: colors.surface,   textColor: colors.textPrimary,  route: '/reports'         },
+    { label: 'Add\nExpense', icon: '＋', color: colors.accent, textColor: colors.textOnAccent, route: '/expense/add' },
+    { label: 'Split\nBill', icon: '⇄', color: colors.secondary, textColor: '#fff', route: '/groups' },
+    { label: 'Track\nSub', icon: '○', color: colors.surface, textColor: colors.textPrimary, route: '/subscriptions' },
+    { label: 'Reports', icon: '◎', color: colors.surface, textColor: colors.textPrimary, route: '/reports' },
   ];
 
   return (
@@ -95,19 +95,19 @@ export default function HomeScreen() {
   const { colors, spacing } = useTheme();
 
   const now = new Date();
-  const year  = now.getFullYear();
+  const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const { user, initials, refetch: refetchUser }                        = useUser();
+  const { user, initials, refetch: refetchUser } = useUser();
   const { summary, spendingTrend, isLoading: reportsLoading,
-          refetch: refetchReports }                                      = useReports(year, month);
+    refetch: refetchReports } = useReports(year, month);
   const { expenses: recent, isLoading: expensesLoading,
-          refetch: refetchExpenses }                                     = useExpenses({ limit: 5 });
-  const { subscriptions, refetch: refetchSubs }                         = useSubscriptions();
-  const { groups, refetch: refetchGroups }                              = useGroups();
+    refetch: refetchExpenses } = useExpenses({ limit: 5 });
+  const { subscriptions, refetch: refetchSubs } = useSubscriptions();
+  const { groups, refetch: refetchGroups } = useGroups();
   const { activeDays, currentStreak, longestStreak,
-          streakJustIncremented, isLoading: streakLoading,
-          refetch: refetchStreak }                                       = useStreak();
+    streakJustIncremented, isLoading: streakLoading,
+    refetch: refetchStreak } = useStreak();
 
   useFocusEffect(useCallback(() => {
     refetchUser();
@@ -141,13 +141,22 @@ export default function HomeScreen() {
           {reportsLoading
             ? <BalanceCardSkeleton />
             : <BalanceCard
-                totalIncome={summary?.totalIncome ?? 0}
-                totalExpenses={summary?.totalExpenses ?? 0}
-                monthlyBudget={user?.monthlyBudget ?? null}
-                monthLabel={monthLabel}
-              />
+              totalIncome={summary?.totalIncome ?? 0}
+              totalExpenses={summary?.totalExpenses ?? 0}
+              monthlyBudget={user?.monthlyBudget ?? null}
+              monthLabel={monthLabel}
+            />
           }
           <QuickActions />
+          {streakLoading
+            ? <StreakCardSkeleton />
+            : <StreakCard
+              activeDays={activeDays}
+              currentStreak={currentStreak}
+              longestStreak={longestStreak}
+              streakJustIncremented={streakJustIncremented}
+            />
+          }
           {reportsLoading
             ? <SpendingChartSkeleton />
             : <SpendingMiniChart data={spendingTrend} />
@@ -155,15 +164,6 @@ export default function HomeScreen() {
           {expensesLoading
             ? <RecentTransactionsSkeleton />
             : <RecentTransactions expenses={recent} />
-          }
-          {streakLoading
-            ? <StreakCardSkeleton />
-            : <StreakCard
-                activeDays={activeDays}
-                currentStreak={currentStreak}
-                longestStreak={longestStreak}
-                streakJustIncremented={streakJustIncremented}
-              />
           }
           <UpcomingSubscriptions subscriptions={subscriptions} />
           <GroupBalances groups={groups} />

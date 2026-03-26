@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
@@ -175,7 +176,9 @@ export function StreakCard({ activeDays, currentStreak, longestStreak, streakJus
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Animated.Text style={[styles.fireEmoji, { transform: [{ scale: fireScale }] }]}>🔥</Animated.Text>
+            <Animated.View style={{ transform: [{ scale: fireScale }] }}>
+              <Ionicons name="flame" size={22} color={colors.accent} />
+            </Animated.View>
             <ThemedText variant="h4" bold> Daily Streak</ThemedText>
           </View>
           <StreakCount count={currentStreak} animated={streakJustIncremented} />
@@ -234,7 +237,6 @@ const styles = StyleSheet.create({
   card:            { padding: 20, gap: 8, borderWidth: 1 },
   header:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLeft:      { flexDirection: 'row', alignItems: 'center' },
-  fireEmoji:       { fontSize: 22 },
   streakCountWrap: { flexDirection: 'row', alignItems: 'flex-end', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
   streakNum:       { lineHeight: 36 },
   monthLabel:      { marginBottom: 2 },

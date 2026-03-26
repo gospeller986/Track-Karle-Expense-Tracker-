@@ -14,7 +14,7 @@ type Props = {
 };
 
 export function BalanceCard({ totalIncome, totalExpenses, monthlyBudget, monthLabel }: Props) {
-  const { colors, spacing, radii } = useTheme();
+  const { colors, spacing, radii, isDark } = useTheme();
 
   const balance = totalIncome - totalExpenses;
   const budgetUsed = monthlyBudget
@@ -24,7 +24,7 @@ export function BalanceCard({ totalIncome, totalExpenses, monthlyBudget, monthLa
   return (
     <View style={{ paddingHorizontal: spacing.xl }}>
       <LinearGradient
-        colors={['#1A1A1A', '#222222']}
+        colors={isDark ? ['#1A1A1A', '#222222'] : [colors.surface, colors.surfaceElevated]}
         style={[styles.card, { borderRadius: radii['2xl'], borderColor: colors.border, borderWidth: 1 }]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}

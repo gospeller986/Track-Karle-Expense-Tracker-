@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useThemeScheme } from '@/context/theme-context';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -199,7 +200,8 @@ function BudgetModal({ visible, current, onSave, onClose }: {
 // ── Main Screen ────────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
-  const { colors, spacing, radii } = useTheme();
+  const { colors, spacing, radii, isDark } = useTheme();
+  const { toggleTheme } = useThemeScheme();
   const router = useRouter();
   const { user, updateProfile, logout } = useAuth();
 
@@ -261,7 +263,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Modals */}
       <EditNameModal
@@ -296,7 +298,7 @@ export default function ProfileScreen() {
 
         {/* Avatar + name hero */}
         <LinearGradient
-          colors={['#1A1A1A', '#141414']}
+          colors={isDark ? ['#1A1A1A', '#141414'] : [colors.bgElevated, colors.surface]}
           style={[styles.hero, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
         >
           <View style={[styles.avatar, { backgroundColor: colors.accentMuted, borderColor: colors.accent, borderWidth: 2 }]}>
@@ -350,7 +352,18 @@ export default function ProfileScreen() {
                   }
                 />
               </View>
-              <SettingRow icon="🌙" label="Theme" value={user.theme === 'dark' ? 'Dark' : 'Light'} />
+              <SettingRow
+                icon={isDark ? '🌙' : '☀️'}
+                label="Dark Mode"
+                rightElement={
+                  <Switch
+                    value={isDark}
+                    onValueChange={toggleTheme}
+                    trackColor={{ false: colors.border, true: colors.accentMuted }}
+                    thumbColor={isDark ? colors.accent : colors.textTertiary}
+                  />
+                }
+              />
             </Card>
           </View>
 

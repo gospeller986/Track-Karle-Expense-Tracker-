@@ -11,7 +11,11 @@
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(curl -s \"https://track-karle-expense-tracker.onrender.com/api/v1/reports/summary?year=2026&month=3\" -H \"Authorization: Bearer test\")",
       "Bash(curl -s --max-time 15 \"https://track-karle-expense-tracker.onrender.com/api/v1/reports/summary?year=2026&month=3\" -H \"Authorization: Bearer invalid\")",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(grep '\"\"expo-blur\"\"' package.json)",
+      "Bash(grep -E '\"\"icon\"\"|\"\"splash\"\"|\"\"adaptiveIcon\"\"' \"/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker/frontend/app.json\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\(''''dependencies'''',{}\\), **d.get\\(''''devDependencies'''',{}\\)}; [print\\(k,v\\) for k,v in sorted\\(deps.items\\(\\)\\)]\")",
+      "Bash(eas build:*)"
     ]
   }
 }

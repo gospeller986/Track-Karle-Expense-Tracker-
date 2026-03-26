@@ -128,7 +128,7 @@ function StatsRow({ avgDailySpend, largestAmount, transactionCount }: {
 // ─── Main Screen ───────────────────────────────────────────────
 
 export default function ReportsScreen() {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, isDark } = useTheme();
   const [period, setPeriod] = useState<Period>('monthly');
 
   const now = new Date();
@@ -174,7 +174,7 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: spacing.xl, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
@@ -194,11 +194,11 @@ export default function ReportsScreen() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
 
         {/* Hero spend */}
         <LinearGradient
-          colors={['#1A1A1A', '#141414']}
+          colors={isDark ? ['#1A1A1A', '#141414'] : [colors.bgElevated, colors.surface]}
           style={[styles.hero, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
         >
           <ThemedText variant="caption" color={colors.textSecondary}>TOTAL SPENT · {heroLabel}</ThemedText>

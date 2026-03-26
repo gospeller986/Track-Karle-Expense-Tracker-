@@ -40,8 +40,67 @@ export class ApiError extends Error {
   }
 }
 
+// ── Token refresh logic ────────────────────────────────────────────────────
+// Prevents multiple concurrent refresh calls — all 401s queue up and resolve
+// together once the single refresh completes.
+
+const KEYS = { access: 'access_token', refresh: 'refresh_token' } as const;
+
+let isRefreshing = false;
+let refreshQueue: Array<(token: string | null) => void> = [];
+
+async function runTokenRefresh(): Promise<string | null> {
+  const storedRefresh = await SecureStore.getItemAsync(KEYS.refresh);
+  if (!storedRefresh) return null;
+
+  // Import lazily to avoid circular dependency (auth.ts → api.ts → auth.ts)
+  const { refresh } = await import('./auth');
+  const { accessToken, refreshToken } = await refresh(storedRefresh);
+
+  await Promise.all([
+    SecureStore.setItemAsync(KEYS.access, accessToken),
+    SecureStore.setItemAsync(KEYS.refresh, refreshToken),
+  ]);
+
+  return accessToken;
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (isRefreshing) {
+    // Another request is already refreshing — wait for it
+    return new Promise(resolve => { refreshQueue.push(resolve); });
+  }
+
+  isRefreshing = true;
+  try {
+    const newToken = await runTokenRefresh();
+    refreshQueue.forEach(resolve => resolve(newToken));
+    return newToken;
+  } catch {
+    refreshQueue.forEach(resolve => resolve(null));
+    // Clear tokens — force re-login
+    await Promise.all([
+      SecureStore.deleteItemAsync(KEYS.access),
+      SecureStore.deleteItemAsync(KEYS.refresh),
+    ]);
+    return null;
+  } finally {
+    isRefreshing = false;
+    refreshQueue = [];
+  }
+}
+
 async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync('access_token');
+  return SecureStore.getItemAsync(KEYS.access);
+}
+
+// ── Core fetch ────────────────────────────────────────────────────────────
+
+async function doFetch(path: string, headers: Record<string, string>, rest: RequestInit) {
+  const res = await fetch(`${API_BASE}${path}`, { headers, ...rest });
+  if (res.status === 204) return { res, json: undefined };
+  const json = await res.json();
+  return { res, json };
 }
 
 export async function apiFetch<T>(
@@ -60,11 +119,18 @@ export async function apiFetch<T>(
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { headers, ...rest });
+  let { res, json } = await doFetch(path, headers, rest);
+
+  // Auto-refresh on 401 and retry once
+  if (auth && res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`;
+      ({ res, json } = await doFetch(path, headers, rest));
+    }
+  }
 
   if (res.status === 204) return undefined as T;
-
-  const json = await res.json();
 
   if (!res.ok) {
     const detail = json?.detail ?? {};

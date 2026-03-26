@@ -23,7 +23,7 @@ function daysUntil(isoDate: string): number {
 }
 
 export default function SubscriptionsScreen() {
-  const { colors, spacing, radii } = useTheme();
+  const { colors, spacing, radii, isDark } = useTheme();
   const router = useRouter();
   const { subscriptions, summary, isLoading, refetch } = useSubscriptions();
 
@@ -40,7 +40,7 @@ export default function SubscriptionsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: spacing.xl, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
@@ -53,11 +53,11 @@ export default function SubscriptionsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
 
         {/* Cost summary hero */}
         <LinearGradient
-          colors={['#1A1A1A', '#141414']}
+          colors={isDark ? ['#1A1A1A', '#141414'] : [colors.bgElevated, colors.surface]}
           style={[styles.hero, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
         >
           <View style={{ alignItems: 'center' }}>
@@ -88,7 +88,7 @@ export default function SubscriptionsScreen() {
 
         {!isLoading && subscriptions.length === 0 && (
           <View style={styles.empty}>
-            <ThemedText style={{ fontSize: 48 }}>📱</ThemedText>
+            <ThemedText style={{ fontSize: 48 , paddingTop : 40 }}>📱</ThemedText>
             <ThemedText variant="h4" style={{ marginTop: 16 }}>No subscriptions yet</ThemedText>
             <ThemedText variant="body" color={colors.textSecondary} style={{ marginTop: 8, textAlign: 'center' }}>
               Tap ＋ to start tracking your recurring payments

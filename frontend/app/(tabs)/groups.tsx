@@ -46,7 +46,7 @@ function MemberAvatars({ group }: { group: Group }) {
 }
 
 export default function GroupsScreen() {
-  const { colors, spacing, radii } = useTheme();
+  const { colors, spacing, radii, isDark } = useTheme();
   const router = useRouter();
   const { groups, isLoading, refetch } = useGroups();
 
@@ -57,7 +57,7 @@ export default function GroupsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: spacing.xl, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
@@ -78,11 +78,11 @@ export default function GroupsScreen() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
 
         {/* Balance summary */}
         <LinearGradient
-          colors={['#1A1A1A', '#141414']}
+          colors={isDark ? ['#1A1A1A', '#141414'] : [colors.bgElevated, colors.surface]}
           style={[styles.summaryBar, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
         >
           <View style={styles.summaryItem}>
@@ -100,12 +100,12 @@ export default function GroupsScreen() {
 
         {!isLoading && groups.length === 0 && (
           <View style={styles.empty}>
-            <ThemedText style={{ fontSize: 48 }}>👥</ThemedText>
+            <ThemedText style={{ fontSize: 48 , paddingTop : 40 }}>👥</ThemedText>
             <ThemedText variant="h4" style={{ marginTop: 16 }}>No groups yet</ThemedText>
             <ThemedText variant="body" color={colors.textSecondary} style={{ marginTop: 8, textAlign: 'center' }}>
               Tap ＋ to create a group and invite friends via QR code
             </ThemedText>
-          </View>
+            </View>
         )}
 
         {!isLoading && groups.length > 0 && (
