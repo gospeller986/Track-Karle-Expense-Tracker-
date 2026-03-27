@@ -83,13 +83,17 @@ function StreakCount({ count, animated }: { count: number; animated: boolean }) 
   });
 
   return (
-    <Animated.View style={[styles.streakCountWrap, { backgroundColor: glowBg, transform: [{ scale }] }]}>
-      <ThemedText variant="h2" color={colors.accent} bold style={styles.streakNum}>
-        {count}
-      </ThemedText>
-      <ThemedText variant="bodySm" color={colors.accent} style={{ marginLeft: 4, marginBottom: 3 }}>
-        {count === 1 ? 'Day' : 'Days'}
-      </ThemedText>
+    // Outer view: JS-driver animation (backgroundColor)
+    <Animated.View style={[styles.streakCountWrap, { backgroundColor: glowBg }]}>
+      {/* Inner view: native-driver animation (scale transform) */}
+      <Animated.View style={[styles.streakCountInner, { transform: [{ scale }] }]}>
+        <ThemedText variant="h2" color={colors.accent} bold style={styles.streakNum}>
+          {count}
+        </ThemedText>
+        <ThemedText variant="bodySm" color={colors.accent} style={{ marginLeft: 4, marginBottom: 3 }}>
+          {count === 1 ? 'Day' : 'Days'}
+        </ThemedText>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -237,7 +241,8 @@ const styles = StyleSheet.create({
   card:            { padding: 20, gap: 8, borderWidth: 1 },
   header:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLeft:      { flexDirection: 'row', alignItems: 'center' },
-  streakCountWrap: { flexDirection: 'row', alignItems: 'flex-end', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
+  streakCountWrap:  { borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
+  streakCountInner: { flexDirection: 'row', alignItems: 'flex-end' },
   streakNum:       { lineHeight: 36 },
   monthLabel:      { marginBottom: 2 },
   row:             { flexDirection: 'row' },

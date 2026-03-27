@@ -56,7 +56,11 @@
       "Bash(JAVA_HOME=/opt/homebrew/opt/openjdk@17 ANDROID_SDK_ROOT=/opt/homebrew/share/android-commandlinetools sdkmanager \"platform-tools\" \"build-tools;35.0.0\" \"platforms;android-35\")",
       "Bash(source ~/.zshrc)",
       "Bash(adb --version)",
-      "Bash(sdkmanager --list_installed)"
+      "Bash(sdkmanager --list_installed)",
+      "Bash(sudo ln:*)",
+      "Bash(source ~/.zprofile)",
+      "Bash(echo \"JAVA_HOME=$JAVA_HOME\")",
+      "Bash(echo \"ANDROID_HOME=$ANDROID_HOME\")"
     ]
   }
 }
