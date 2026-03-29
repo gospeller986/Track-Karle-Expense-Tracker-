@@ -35,16 +35,25 @@ import models.notification  # noqa: F401
 
 # ── System category seed data ──────────────────────────────────────────────────
 SYSTEM_CATEGORIES = [
-    {"name": "Food & Dining",   "icon": "🍔", "color": "#FF8A00"},
-    {"name": "Transport",       "icon": "🚗", "color": "#4D9EFF"},
-    {"name": "Shopping",        "icon": "🛍️", "color": "#FF4D9E"},
-    {"name": "Entertainment",   "icon": "🎬", "color": "#7B61FF"},
-    {"name": "Health",          "icon": "💊", "color": "#00C48C"},
-    {"name": "Utilities",       "icon": "⚡", "color": "#FFD700"},
-    {"name": "Rent",            "icon": "🏠", "color": "#FF6B6B"},
-    {"name": "Subscriptions",   "icon": "📱", "color": "#C9F31D"},
-    {"name": "Travel",          "icon": "✈️", "color": "#00B4D8"},
-    {"name": "Other",           "icon": "💰", "color": "#888888"},
+    {"name": "Food & Dining",   "icon": "🍔", "color": "#FF8A00", "category_type": "expense"},
+    {"name": "Transport",       "icon": "🚗", "color": "#4D9EFF", "category_type": "expense"},
+    {"name": "Shopping",        "icon": "🛍️", "color": "#FF4D9E", "category_type": "expense"},
+    {"name": "Entertainment",   "icon": "🎬", "color": "#7B61FF", "category_type": "expense"},
+    {"name": "Health",          "icon": "💊", "color": "#00C48C", "category_type": "expense"},
+    {"name": "Utilities",       "icon": "⚡", "color": "#FFD700", "category_type": "expense"},
+    {"name": "Rent",            "icon": "🏠", "color": "#FF6B6B", "category_type": "expense"},
+    {"name": "Subscriptions",   "icon": "📱", "color": "#C9F31D", "category_type": "expense"},
+    {"name": "Travel",          "icon": "✈️", "color": "#00B4D8", "category_type": "expense"},
+    {"name": "Other",           "icon": "💰", "color": "#888888", "category_type": "both"},
+]
+
+INCOME_CATEGORIES = [
+    {"name": "Salary",          "icon": "💼", "color": "#00C48C", "category_type": "income"},
+    {"name": "Freelance",       "icon": "💻", "color": "#4D9EFF", "category_type": "income"},
+    {"name": "Business",        "icon": "🏢", "color": "#7B61FF", "category_type": "income"},
+    {"name": "Investment",      "icon": "📈", "color": "#C9F31D", "category_type": "income"},
+    {"name": "Rental",          "icon": "🏠", "color": "#FF8A00", "category_type": "income"},
+    {"name": "Gift / Bonus",    "icon": "🎁", "color": "#FF4D9E", "category_type": "income"},
 ]
 
 
@@ -58,6 +67,11 @@ async def seed_categories() -> None:
                 await repo.create(is_system=True, user_id=None, **cat)
             await session.commit()
             logger.info("Seeded %d system categories.", len(SYSTEM_CATEGORIES))
+        if await repo.income_category_count() == 0:
+            for cat in INCOME_CATEGORIES:
+                await repo.create(is_system=True, user_id=None, **cat)
+            await session.commit()
+            logger.info("Seeded %d income categories.", len(INCOME_CATEGORIES))
 
 
 @asynccontextmanager

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import {
   View, ScrollView, TouchableOpacity, StyleSheet, StatusBar,
   TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
@@ -103,8 +103,18 @@ export default function AddExpenseScreen() {
   const btnShakeX   = useRef(new Animated.Value(0)).current;
   const amountColor = type === 'expense' ? colors.expense : colors.income;
 
+  const visibleCategories = useMemo(() => {
+    const primary = categories.filter(c => c.categoryType === type);
+    const shared  = categories.filter(c => c.categoryType === 'both');
+    return [...primary, ...shared];
+  }, [categories, type]);
+
   function handleTypeChange(t: ExpenseType) {
     setType(t);
+    const primary = categories.filter(c => c.categoryType === t);
+    const shared  = categories.filter(c => c.categoryType === 'both');
+    const first   = [...primary, ...shared][0];
+    if (first) setSelectedCat(first.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
@@ -267,7 +277,7 @@ export default function AddExpenseScreen() {
                 {catsLoading && (
                   <ActivityIndicator color={colors.accent} style={{ marginLeft: spacing.xl }} />
                 )}
-                {categories.map(cat => (
+                {visibleCategories.map(cat => (
                   <CatChip
                     key={cat.id}
                     cat={cat}

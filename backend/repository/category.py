@@ -37,3 +37,13 @@ class CategoryRepository(BaseRepository[Category]):
             select(func.count()).select_from(Category).where(Category.is_system.is_(True))
         )
         return result.scalar_one()
+
+    async def income_category_count(self) -> int:
+        from sqlalchemy import func
+        result = await self.session.execute(
+            select(func.count()).select_from(Category).where(
+                Category.is_system.is_(True),
+                Category.category_type == "income",
+            )
+        )
+        return result.scalar_one()

@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
+import Ionicons from '@expo/vector-icons/Ionicons';
+
 import { useTheme } from '@/hooks/use-theme';
 import { useThemeScheme } from '@/context/theme-context';
 import { ThemedText } from '@/components/themed-text';
@@ -34,7 +36,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 }
 
 function SettingRow({ icon, label, value, onPress, rightElement }: {
-  icon: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   value?: string;
   onPress?: () => void;
@@ -47,7 +49,7 @@ function SettingRow({ icon, label, value, onPress, rightElement }: {
       activeOpacity={onPress ? 0.7 : 1}
       style={[styles.settingRow, { paddingHorizontal: spacing.lg, paddingVertical: spacing.md }]}
     >
-      <ThemedText style={{ fontSize: 18, width: 28 }}>{icon}</ThemedText>
+      <Ionicons name={icon} size={20} color={colors.accent} style={{ width: 28 }} />
       <ThemedText variant="bodySm" semibold style={{ flex: 1, marginLeft: spacing.md }}>{label}</ThemedText>
       {value && <ThemedText variant="bodySm" color={colors.textSecondary}>{value}</ThemedText>}
       {rightElement}
@@ -318,10 +320,10 @@ export default function ProfileScreen() {
             <ThemedText variant="label" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>ACCOUNT</ThemedText>
             <Card padded={false}>
               {([
-                { icon: '👤', label: 'Edit Name',       onPress: () => setEditNameVisible(true) },
-                { icon: '💱', label: 'Currency',         value: user.currency,    onPress: () => setCurrencyVisible(true) },
-                { icon: '💰', label: 'Monthly Budget',   value: formattedBudget,  onPress: () => setBudgetVisible(true) },
-                { icon: '🔒', label: 'Change Password',  onPress: () => router.push('/auth/forgot-password') },
+                { icon: 'person-outline',       label: 'Edit Name',       onPress: () => setEditNameVisible(true) },
+                { icon: 'swap-horizontal-outline', label: 'Currency',     value: user.currency,    onPress: () => setCurrencyVisible(true) },
+                { icon: 'wallet-outline',        label: 'Monthly Budget', value: formattedBudget,  onPress: () => setBudgetVisible(true) },
+                { icon: 'lock-closed-outline',   label: 'Change Password', onPress: () => router.push('/auth/forgot-password') },
               ] as const).map((item, idx, arr) => (
                 <View key={item.label} style={idx < arr.length - 1 ? { borderBottomColor: colors.border, borderBottomWidth: 1 } : undefined}>
                   <SettingRow {...item} />
@@ -336,7 +338,7 @@ export default function ProfileScreen() {
             <Card padded={false}>
               <View style={{ borderBottomColor: colors.border, borderBottomWidth: 1 }}>
                 <SettingRow
-                  icon="🔔"
+                  icon="notifications-outline"
                   label="Notifications"
                   rightElement={
                     savingNotif
@@ -353,7 +355,7 @@ export default function ProfileScreen() {
                 />
               </View>
               <SettingRow
-                icon={isDark ? '🌙' : '☀️'}
+                icon={isDark ? 'moon-outline' : 'sunny-outline'}
                 label="Dark Mode"
                 rightElement={
                   <Switch
@@ -380,9 +382,9 @@ export default function ProfileScreen() {
             <ThemedText variant="label" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>MORE</ThemedText>
             <Card padded={false}>
               <View style={{ borderBottomColor: colors.border, borderBottomWidth: 1 }}>
-                <SettingRow icon="🚪" label="Sign Out" onPress={handleSignOut} />
+                <SettingRow icon="log-out-outline" label="Sign Out" onPress={handleSignOut} />
               </View>
-              <SettingRow icon="🗑️" label="Delete Account" onPress={handleDeleteAccount} />
+              <SettingRow icon="trash-outline" label="Delete Account" onPress={handleDeleteAccount} />
             </Card>
           </View>
 

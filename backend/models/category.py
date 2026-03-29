@@ -18,6 +18,8 @@ class Category(UUIDBase):
     icon: Mapped[str] = mapped_column(String(10), nullable=False)   # emoji
     color: Mapped[str] = mapped_column(String(7), nullable=False)   # hex
     is_system: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # 'expense' | 'income' | 'both'
+    category_type: Mapped[str] = mapped_column(String(10), nullable=False, default="expense")
 
     # NULL for system categories; set for user-created ones
     user_id: Mapped[Optional[str]] = mapped_column(

@@ -6,6 +6,7 @@ export type Category = {
   icon: string;
   color: string;
   isDefault: boolean;
+  categoryType: 'expense' | 'income' | 'both';
 };
 
 export type CreateCategoryPayload = {

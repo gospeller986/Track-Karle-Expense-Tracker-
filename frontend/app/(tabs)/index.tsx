@@ -5,6 +5,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { expenseRefreshBus } from '@/utils/refresh-bus';
 
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+
 import { useTheme } from '@/hooks/use-theme';
 import { useUser } from '@/hooks/use-user';
 import { useExpenses } from '@/hooks/use-expenses';
@@ -93,6 +95,7 @@ function QuickActions() {
 
 export default function HomeScreen() {
   const { colors, spacing } = useTheme();
+  const tabBarHeight = useBottomTabBarHeight();
 
   const now = new Date();
   const year = now.getFullYear();
@@ -133,7 +136,7 @@ export default function HomeScreen() {
       <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: spacing['4xl'] }}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + spacing['2xl'] }}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ gap: spacing['2xl'] }}>
