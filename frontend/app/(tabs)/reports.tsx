@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import Ionicons from '@expo/vector-icons/Ionicons';
+
 import { useTheme } from '@/hooks/use-theme';
 import { useReports } from '@/hooks/use-reports';
 import { ThemedText } from '@/components/themed-text';
@@ -104,9 +106,9 @@ function StatsRow({ avgDailySpend, largestAmount, transactionCount }: {
   const { colors, radii } = useTheme();
 
   const stats = [
-    { label: 'Avg / day', value: formatCurrency(avgDailySpend), icon: '📊' },
-    { label: 'Largest',   value: formatCurrency(largestAmount), icon: '🔺' },
-    { label: 'Txns',      value: `${transactionCount}`,          icon: '📝' },
+    { label: 'Avg / day', value: formatCurrency(avgDailySpend), icon: 'bar-chart-outline'     as const },
+    { label: 'Largest',   value: formatCurrency(largestAmount), icon: 'trending-up-outline'   as const },
+    { label: 'Txns',      value: `${transactionCount}`,          icon: 'receipt-outline'       as const },
   ];
 
   return (
@@ -116,7 +118,7 @@ function StatsRow({ avgDailySpend, largestAmount, transactionCount }: {
           key={stat.label}
           style={[styles.statCard, { backgroundColor: colors.surface, borderRadius: radii.xl, borderColor: colors.border, borderWidth: 1 }]}
         >
-          <ThemedText style={{ fontSize: 22, marginBottom: 4 }}>{stat.icon}</ThemedText>
+          <Ionicons name={stat.icon} size={22} color={colors.accent} style={{ marginBottom: 4 }} />
           <ThemedText variant="h4" bold>{stat.value}</ThemedText>
           <ThemedText variant="caption" color={colors.textSecondary}>{stat.label}</ThemedText>
         </View>
