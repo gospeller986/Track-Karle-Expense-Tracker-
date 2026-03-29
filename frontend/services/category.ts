@@ -13,6 +13,7 @@ export type CreateCategoryPayload = {
   name: string;
   icon: string;
   color: string;
+  categoryType?: 'expense' | 'income' | 'both';
 };
 
 export type UpdateCategoryPayload = Partial<CreateCategoryPayload>;

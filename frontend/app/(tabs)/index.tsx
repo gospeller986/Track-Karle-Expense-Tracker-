@@ -33,6 +33,13 @@ const MONTH_NAMES = [
 
 // ─── Header ───────────────────────────────────────────────────
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning 👋';
+  if (hour < 17) return 'Good afternoon 👋';
+  return 'Good evening 👋';
+}
+
 function Header({ name, initials }: { name: string; initials: string }) {
   const { colors, spacing } = useTheme();
   const router = useRouter();
@@ -40,7 +47,7 @@ function Header({ name, initials }: { name: string; initials: string }) {
   return (
     <View style={[styles.header, { paddingHorizontal: spacing.xl }]}>
       <View>
-        <ThemedText variant="bodySm" color={colors.textSecondary}>Good morning 👋</ThemedText>
+        <ThemedText variant="bodySm" color={colors.textSecondary}>{getGreeting()}</ThemedText>
         <ThemedText variant="h3">{name || '…'}</ThemedText>
       </View>
       <TouchableOpacity

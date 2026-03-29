@@ -320,10 +320,11 @@ export default function ProfileScreen() {
             <ThemedText variant="label" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>ACCOUNT</ThemedText>
             <Card padded={false}>
               {([
-                { icon: 'person-outline',       label: 'Edit Name',       onPress: () => setEditNameVisible(true) },
-                { icon: 'swap-horizontal-outline', label: 'Currency',     value: user.currency,    onPress: () => setCurrencyVisible(true) },
-                { icon: 'wallet-outline',        label: 'Monthly Budget', value: formattedBudget,  onPress: () => setBudgetVisible(true) },
-                { icon: 'lock-closed-outline',   label: 'Change Password', onPress: () => router.push('/auth/forgot-password') },
+                { icon: 'person-outline',         label: 'Edit Name',          onPress: () => setEditNameVisible(true) },
+                { icon: 'swap-horizontal-outline', label: 'Currency',          value: user.currency,   onPress: () => setCurrencyVisible(true) },
+                { icon: 'wallet-outline',          label: 'Monthly Budget',    value: formattedBudget, onPress: () => setBudgetVisible(true) },
+                { icon: 'color-palette-outline',   label: 'Manage Categories', onPress: () => router.push('/profile/categories') },
+                { icon: 'lock-closed-outline',     label: 'Change Password',   onPress: () => router.push('/auth/forgot-password') },
               ] as const).map((item, idx, arr) => (
                 <View key={item.label} style={idx < arr.length - 1 ? { borderBottomColor: colors.border, borderBottomWidth: 1 } : undefined}>
                   <SettingRow {...item} />

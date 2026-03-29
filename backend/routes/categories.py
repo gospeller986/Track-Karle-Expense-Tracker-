@@ -46,6 +46,7 @@ async def create_category(
         name=body.name,
         icon=body.icon,
         color=body.color,
+        category_type=body.category_type,
         is_system=False,
         user_id=current_user.id,
     )
