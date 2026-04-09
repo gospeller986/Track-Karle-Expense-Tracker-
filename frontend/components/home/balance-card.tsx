@@ -11,9 +11,10 @@ type Props = {
   totalExpenses: number;
   monthlyBudget: number | null;
   monthLabel: string;
+  cumulativeSavings?: number;
 };
 
-export function BalanceCard({ totalIncome, totalExpenses, monthlyBudget, monthLabel }: Props) {
+export function BalanceCard({ totalIncome, totalExpenses, monthlyBudget, monthLabel, cumulativeSavings }: Props) {
   const { colors, spacing, radii, isDark } = useTheme();
 
   const balance = totalIncome - totalExpenses;
@@ -84,6 +85,16 @@ export function BalanceCard({ totalIncome, totalExpenses, monthlyBudget, monthLa
             </View>
           </View>
         )}
+
+        {/* Cumulative savings from previous months */}
+        {cumulativeSavings !== undefined && (
+          <View style={[styles.carryOver, { borderTopColor: colors.border, borderTopWidth: 1, marginTop: spacing.lg, paddingTop: spacing.lg }]}>
+            <ThemedText variant="caption" color={colors.textSecondary}>CARRIED FROM PREVIOUS MONTHS</ThemedText>
+            <ThemedText variant="h4" color={cumulativeSavings >= 0 ? colors.income : colors.expense}>
+              {cumulativeSavings >= 0 ? '+' : '−'}{formatCurrency(Math.abs(cumulativeSavings))}
+            </ThemedText>
+          </View>
+        )}
       </LinearGradient>
     </View>
   );
@@ -99,4 +110,5 @@ const styles = StyleSheet.create({
   budgetLabels: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   budgetTrack: { height: 6, width: '100%' },
   budgetFill: { height: 6 },
+  carryOver: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 });

@@ -84,7 +84,8 @@ function AppRoot() {
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="auth" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="onboarding"         options={{ animation: 'fade' }} />
+        <Stack.Screen name="onboarding/index"    options={{ animation: 'fade' }} />
+        <Stack.Screen name="onboarding/setup"    options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="expense/add"         options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="expense/[id]"        options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="subscription/add"    options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

@@ -75,13 +75,13 @@ export default function ForgotPasswordScreen() {
                 color={colors.textSecondary}
                 style={{ marginTop: spacing.sm, textAlign: 'center', lineHeight: 22 }}
               >
-                If an account exists for {email.trim()}, you'll receive a reset link shortly.{'\n'}
-                In dev mode the token is printed to the server console.
+                If an account exists for {email.trim()}, you'll receive a reset token by email shortly.
               </ThemedText>
               <Button
                 label="Enter Reset Token"
                 variant="secondary"
                 size="md"
+                fullWidth
                 style={{ marginTop: spacing['3xl'] }}
                 onPress={() => router.push('/auth/reset-password')}
               />

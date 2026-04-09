@@ -73,3 +73,14 @@ export function resetPassword(
     body: JSON.stringify({ token, newPassword }),
   });
 }
+
+export function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/auth/change-password', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}

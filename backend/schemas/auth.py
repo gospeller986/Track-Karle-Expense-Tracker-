@@ -44,6 +44,11 @@ class ResetPasswordRequest(_CamelModel):
     new_password: str  # camelCase alias: newPassword
 
 
+class ChangePasswordRequest(_CamelModel):
+    current_password: str  # camelCase alias: currentPassword
+    new_password: str      # camelCase alias: newPassword
+
+
 # ── Response schemas ───────────────────────────────────────────────────────────
 
 class AuthUserResponse(_CamelModel):

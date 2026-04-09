@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import secrets
+import smtplib
+import ssl
 import uuid
 from datetime import timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -83,6 +88,56 @@ def _auth_error(code: str, message: str, status_code: int = 401):
         status_code=status_code,
         detail={"code": code, "message": message},
     )
+
+
+def _build_reset_email(to_email: str, token: str) -> MIMEMultipart:
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"Your {settings.app_name} password reset token"
+    msg["From"]    = settings.smtp_user
+    msg["To"]      = to_email
+
+    html = f"""
+    <div style="font-family:sans-serif;max-width:480px;margin:auto">
+      <h2 style="color:#111">Reset your password</h2>
+      <p>You requested a password reset for your {settings.app_name} account.</p>
+      <p>Copy and paste this token into the app:</p>
+      <div style="background:#f4f4f4;border-radius:8px;padding:16px;font-size:22px;
+                  letter-spacing:4px;text-align:center;font-weight:bold;font-family:monospace">
+        {token}
+      </div>
+      <p style="color:#666;font-size:13px;margin-top:24px">
+        This token expires in <strong>1 hour</strong>.<br>
+        If you didn't request this, you can safely ignore this email.
+      </p>
+    </div>
+    """
+    msg.attach(MIMEText(html, "html"))
+    return msg
+
+
+def _smtp_send(to_email: str, msg: MIMEMultipart) -> None:
+    context = ssl.create_default_context()
+    with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+        smtp.ehlo()
+        smtp.starttls(context=context)
+        smtp.login(settings.smtp_user, settings.smtp_password)
+        smtp.sendmail(settings.smtp_user, to_email, msg.as_string())
+
+
+async def _send_reset_email(email: str, token: str) -> None:
+    """Send a password-reset email via Gmail SMTP. Falls back to console if unconfigured."""
+    if not settings.smtp_user or not settings.smtp_password:
+        logger.warning("[DEV] SMTP not configured. Reset token for %s: %s", email, token)
+        print(f"[DEV] Password reset token for {email}: {token}")
+        return
+
+    msg = _build_reset_email(email, token)
+    try:
+        await asyncio.to_thread(_smtp_send, email, msg)
+        logger.info("Password reset email sent to %s", email)
+    except Exception as exc:
+        logger.error("Failed to send reset email to %s: %s", email, exc)
+        print(f"[FALLBACK] Password reset token for {email}: {token}")
 
 
 class AuthService:
@@ -224,9 +279,19 @@ class AuthService:
             expires_at=expires_at,
         )
 
-        # Dev mode: print token to console (replace with email service in prod)
-        print(f"[DEV] Password reset token for {email}: {reset_token}")
-        logger.info("[DEV] Password reset token for %s: %s", email, reset_token)
+        await _send_reset_email(email, reset_token)
+
+    # ── Change password (authenticated) ────────────────────────────────────────
+
+    async def change_password(
+        self, db: AsyncSession, user: "User", current_password: str, new_password: str
+    ) -> None:
+        if not _verify_password(current_password, user.hashed_password):
+            _auth_error("INVALID_CREDENTIALS", "Current password is incorrect.", 400)
+
+        user_repo = UserRepository(db)
+        new_hashed = _hash_password(new_password)
+        await user_repo.update(user, hashed_password=new_hashed)
 
     # ── Reset password ─────────────────────────────────────────────────────────
 

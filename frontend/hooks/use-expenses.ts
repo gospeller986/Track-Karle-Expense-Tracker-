@@ -20,6 +20,15 @@ export function useExpenses(query?: ExpenseQuery): UseExpensesResult {
   // Stable key so the effect only re-runs when the query actually changes
   const queryKey = JSON.stringify(query);
 
+  // Clear stale data the moment the query changes — before the async fetch even starts.
+  // This prevents old-month data from leaking into the new-month render.
+  useEffect(() => {
+    setExpenses([]);
+    setPagination(null);
+    setIsLoading(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryKey]);
+
   const fetch = useCallback(async () => {
     setIsLoading(true);
     setError(null);

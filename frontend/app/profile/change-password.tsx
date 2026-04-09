@@ -10,8 +10,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-import Ionicons from '@expo/vector-icons/Ionicons';
-
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import { Input } from '@/components/ui/input';
@@ -19,35 +17,35 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { ApiError } from '@/services/api';
 
-export default function ResetPasswordScreen() {
+export default function ChangePasswordScreen() {
   const { colors, spacing, radii } = useTheme();
   const router = useRouter();
-  const { resetPassword } = useAuth();
+  const { changePassword } = useAuth();
 
-  const [token, setToken]           = useState('');
-  const [password, setPassword]     = useState('');
-  const [confirm, setConfirm]       = useState('');
-  const [loading, setLoading]       = useState(false);
-  const [done, setDone]             = useState(false);
-  const [error, setError]           = useState('');
+  const [current, setCurrent]     = useState('');
+  const [next, setNext]           = useState('');
+  const [confirm, setConfirm]     = useState('');
+  const [loading, setLoading]     = useState(false);
+  const [done, setDone]           = useState(false);
+  const [error, setError]         = useState('');
 
-  const handleReset = async () => {
-    if (!token.trim() || !password || !confirm) {
+  const handleSubmit = async () => {
+    if (!current || !next || !confirm) {
       setError('Please fill in all fields.');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (next.length < 8) {
+      setError('New password must be at least 8 characters.');
       return;
     }
-    if (password !== confirm) {
-      setError('Passwords do not match.');
+    if (next !== confirm) {
+      setError('New passwords do not match.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      await resetPassword(token.trim(), password);
+      await changePassword(current, next);
       setDone(true);
     } catch (e) {
       if (e instanceof ApiError) {
@@ -77,64 +75,68 @@ export default function ResetPasswordScreen() {
             /* ── Success state ── */
             <View style={styles.successBlock}>
               <View style={[styles.iconBox, { backgroundColor: colors.incomeMuted, borderRadius: radii['2xl'] }]}>
-                <Ionicons name="checkmark-circle" size={44} color={colors.income} />
+                <ThemedText style={{ fontSize: 36 }}>🔒</ThemedText>
               </View>
               <ThemedText variant="h3" style={{ marginTop: spacing.xl, textAlign: 'center' }}>
-                Password updated!
+                Password changed!
               </ThemedText>
               <ThemedText
                 variant="body"
                 color={colors.textSecondary}
-                style={{ marginTop: spacing.sm, textAlign: 'center' }}
+                style={{ marginTop: spacing.sm, textAlign: 'center', lineHeight: 22 }}
               >
-                Your password has been changed. Sign in with your new password.
+                Your password has been updated successfully.
               </ThemedText>
               <Button
-                label="Go to Sign In"
+                label="Done"
                 variant="primary"
                 size="lg"
-                fullWidth
-                style={{ marginTop: spacing['3xl'] }}
-                onPress={() => router.replace('/auth/login')}
+                style={{ marginTop: spacing['3xl'], width: '100%' }}
+                onPress={() => router.back()}
               />
             </View>
           ) : (
             /* ── Form state ── */
             <View>
-              <ThemedText variant="h3">Set new password</ThemedText>
+              <ThemedText variant="h3">Change password</ThemedText>
               <ThemedText
                 variant="body"
                 color={colors.textSecondary}
                 style={{ marginTop: spacing.sm, marginBottom: spacing['3xl'], lineHeight: 22 }}
               >
-                Enter the reset token from your email, then choose a new password.
+                Enter your current password, then choose a new one.
               </ThemedText>
 
               <View style={{ gap: spacing.lg }}>
                 <Input
-                  label="Reset Token"
-                  value={token}
-                  onChangeText={setToken}
-                  placeholder="Paste token here"
+                  label="Current Password"
+                  value={current}
+                  onChangeText={setCurrent}
+                  placeholder="Your existing password"
+                  secureTextEntry
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
 
                 <Input
                   label="New Password"
-                  value={password}
-                  onChangeText={setPassword}
+                  value={next}
+                  onChangeText={setNext}
                   placeholder="At least 8 characters"
                   secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
                 />
 
                 <Input
-                  label="Confirm Password"
+                  label="Confirm New Password"
                   value={confirm}
                   onChangeText={setConfirm}
                   placeholder="Repeat your new password"
                   secureTextEntry
-                  error={confirm && password !== confirm ? 'Passwords do not match' : undefined}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  error={confirm && next !== confirm ? 'Passwords do not match' : undefined}
                 />
 
                 {error ? (
@@ -144,12 +146,12 @@ export default function ResetPasswordScreen() {
                 ) : null}
 
                 <Button
-                  label="Reset Password"
+                  label="Update Password"
                   variant="primary"
                   size="lg"
                   fullWidth
                   loading={loading}
-                  onPress={handleReset}
+                  onPress={handleSubmit}
                 />
               </View>
             </View>

@@ -25,6 +25,7 @@ type AuthContextValue = {
   updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -137,8 +138,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authApi.resetPassword(token, newPassword);
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    await authApi.changePassword(currentPassword, newPassword);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateProfile, forgotPassword, resetPassword }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateProfile, forgotPassword, resetPassword, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

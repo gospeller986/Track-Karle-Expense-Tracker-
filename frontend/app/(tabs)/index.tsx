@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -14,6 +14,7 @@ import { useSubscriptions } from '@/hooks/use-subscriptions';
 import { useGroups } from '@/hooks/use-groups';
 import { useReports } from '@/hooks/use-reports';
 import { useStreak } from '@/hooks/use-streak';
+import { MonthPicker } from '@/components/ui/month-picker';
 import { ThemedText } from '@/components/themed-text';
 import { BalanceCard } from '@/components/home/balance-card';
 import { BalanceCardSkeleton } from '@/components/home/balance-card-skeleton';
@@ -105,14 +106,26 @@ export default function HomeScreen() {
   const tabBarHeight = useBottomTabBarHeight();
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  const [selectedYear, setSelectedYear]   = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+
+  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth() + 1;
 
   const { user, initials, refetch: refetchUser } = useUser();
-  const { summary, spendingTrend, isLoading: reportsLoading,
-    refetch: refetchReports } = useReports(year, month);
+  const { summary, spendingTrend, cumulativeSavings, isLoading: reportsLoading,
+    refetch: refetchReports } = useReports(selectedYear, selectedMonth);
+
+  // For past months show that month's transactions; for current month show latest 5
+  const expenseQuery = isCurrentMonth
+    ? { limit: 5 }
+    : (() => {
+        const m = String(selectedMonth).padStart(2, '0');
+        const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+        return { startDate: `${selectedYear}-${m}-01`, endDate: `${selectedYear}-${m}-${String(lastDay).padStart(2, '0')}`, limit: 5 };
+      })();
+
   const { expenses: recent, isLoading: expensesLoading,
-    refetch: refetchExpenses } = useExpenses({ limit: 5 });
+    refetch: refetchExpenses } = useExpenses(expenseQuery);
   const { subscriptions, refetch: refetchSubs } = useSubscriptions();
   const { groups, refetch: refetchGroups } = useGroups();
   const { activeDays, currentStreak, longestStreak,
@@ -136,7 +149,7 @@ export default function HomeScreen() {
     });
   }, [refetchReports, refetchExpenses]);
 
-  const monthLabel = MONTH_NAMES[now.getMonth()].toUpperCase();
+  const monthLabel = MONTH_NAMES[selectedMonth - 1].toUpperCase();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
@@ -148,6 +161,11 @@ export default function HomeScreen() {
       >
         <View style={{ gap: spacing['2xl'] }}>
           <Header name={user?.name ?? ''} initials={initials} />
+          <MonthPicker
+            year={selectedYear}
+            month={selectedMonth}
+            onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+          />
           {reportsLoading
             ? <BalanceCardSkeleton />
             : <BalanceCard
@@ -155,6 +173,7 @@ export default function HomeScreen() {
               totalExpenses={summary?.totalExpenses ?? 0}
               monthlyBudget={user?.monthlyBudget ?? null}
               monthLabel={monthLabel}
+              cumulativeSavings={cumulativeSavings}
             />
           }
           <QuickActions />

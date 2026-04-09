@@ -8,6 +8,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useReports } from '@/hooks/use-reports';
+import { MonthPicker } from '@/components/ui/month-picker';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,14 +36,17 @@ function BarChart({ data }: { data: ChartPoint[] }) {
       {data.map((item, i) => {
         const isLast = i === data.length - 1;
         const barH = Math.max((item.totalExpenses / max) * 120, 8);
+        const barColors: [string, string] = isLast
+          ? [colors.accent, colors.accentDim]
+          : [colors.accentDim, colors.accentMuted];
         return (
           <View key={item.key} style={styles.barCol}>
-            <ThemedText variant="caption" color={isLast ? colors.accent : colors.textTertiary}>
-              {isLast ? formatCurrency(item.totalExpenses) : ''}
+            <ThemedText variant="caption" color={isLast ? colors.accent : colors.textSecondary}>
+              {item.totalExpenses > 0 ? formatCurrency(item.totalExpenses) : ''}
             </ThemedText>
             <View style={{ height: 120, justifyContent: 'flex-end', marginVertical: 6 }}>
               <LinearGradient
-                colors={isLast ? [colors.accent, colors.accentDim] : [colors.surfaceElevated, colors.surface]}
+                colors={barColors}
                 style={[
                   { height: barH, width: 32, borderRadius: radii.sm },
                   isLast && { shadowColor: colors.accent, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
@@ -134,9 +138,12 @@ export default function ReportsScreen() {
   const [period, setPeriod] = useState<Period>('monthly');
 
   const now = new Date();
+  const [selectedYear, setSelectedYear]   = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+
   const { summary, spendingTrend, weeklyTrend, categoryBreakdown, isLoading, refetch } = useReports(
-    now.getFullYear(),
-    now.getMonth() + 1,
+    selectedYear,
+    selectedMonth,
   );
 
   useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
@@ -170,7 +177,7 @@ export default function ReportsScreen() {
   const delta = currentSpend - prevSpend;
   const deltaPercent = prevSpend > 0 ? Math.round(Math.abs(delta / prevSpend) * 100) : 0;
 
-  const heroLabel = isWeekly ? 'THIS WEEK' : MONTH_NAMES[now.getMonth()].toUpperCase();
+  const heroLabel = isWeekly ? 'THIS WEEK' : MONTH_NAMES[selectedMonth - 1].toUpperCase();
   const deltaLabel = isWeekly ? 'vs last week' : 'vs last month';
   const trendSectionLabel = isWeekly ? 'PAST 4 WEEKS' : 'SPENDING TREND';
 
@@ -197,6 +204,17 @@ export default function ReportsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+
+        {/* Month picker — monthly mode only */}
+        {!isWeekly && (
+          <View style={{ paddingVertical: spacing.md, borderBottomColor: colors.border, borderBottomWidth: 1 }}>
+            <MonthPicker
+              year={selectedYear}
+              month={selectedMonth}
+              onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+            />
+          </View>
+        )}
 
         {/* Hero spend */}
         <LinearGradient
@@ -251,7 +269,7 @@ export default function ReportsScreen() {
               <View>
                 <View style={[styles.sectionHeader, { marginBottom: spacing.md }]}>
                   <ThemedText variant="label" color={colors.textSecondary}>BY CATEGORY</ThemedText>
-                  <ThemedText variant="caption" color={colors.textTertiary}>{MONTH_NAMES[now.getMonth()]}</ThemedText>
+                  <ThemedText variant="caption" color={colors.textTertiary}>{MONTH_NAMES[selectedMonth - 1]}</ThemedText>
                 </View>
                 <Card>
                   <DonutSegments data={categoryBreakdown} />

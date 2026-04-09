@@ -29,20 +29,23 @@ export function SpendingMiniChart({ data }: Props) {
           {data.map((item, i) => {
             const isLast = i === data.length - 1;
             const barH = Math.max((item.totalExpenses / max) * 80, 8);
+            const barColors: [string, string] = isLast
+              ? [colors.accent, colors.accentDim]
+              : [colors.accentDim, colors.accentMuted];
             return (
               <View key={`${item.year}-${item.month}`} style={styles.barGroup}>
-                <ThemedText variant="caption" color={isLast ? colors.accent : colors.textTertiary}>
-                  {isLast ? formatCurrency(item.totalExpenses) : ''}
+                <ThemedText variant="caption" color={isLast ? colors.accent : colors.textSecondary} style={{ fontSize: 9 }}>
+                  {item.totalExpenses > 0 ? formatCurrency(item.totalExpenses) : ''}
                 </ThemedText>
                 <View style={{ height: 80, justifyContent: 'flex-end', marginTop: 4 }}>
                   <LinearGradient
-                    colors={isLast ? [colors.accent, colors.accentDim] : [colors.surfaceElevated, colors.surface]}
+                    colors={barColors}
                     style={{ height: barH, width: 28, borderRadius: radii.sm }}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                   />
                 </View>
-                <ThemedText variant="caption" color={isLast ? colors.accent : colors.textTertiary} style={{ marginTop: 4 }}>
+                <ThemedText variant="caption" color={isLast ? colors.accent : colors.textSecondary} style={{ marginTop: 4 }}>
                   {item.month}
                 </ThemedText>
               </View>

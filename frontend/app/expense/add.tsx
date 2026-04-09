@@ -119,7 +119,14 @@ export default function AddExpenseScreen() {
   }
 
   function handleAmountChange(text: string) {
-    setAmount(text);
+    // Strip anything that isn't a digit or a single decimal point.
+    // The controlled `value` prop ensures the sanitised value is rendered;
+    // no setNativeProps needed — that resets the cursor and drops characters
+    // already buffered by the Android IME (e.g. typing 200,000 → shows 200).
+    const sanitised = text.replace(/[^0-9.]/g, '');
+    const parts = sanitised.split('.');
+    const clean = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : sanitised;
+    setAmount(clean);
     if (text) {
       amountScale.setValue(1);
       Animated.spring(amountScale, {
@@ -239,6 +246,7 @@ export default function AddExpenseScreen() {
               <Animated.View style={[styles.amountRow, { transform: [{ scale: amountScale }] }]}>
                 <ThemedText variant="h2" color={amountColor}>₹</ThemedText>
                 <TextInput
+
                   value={amount}
                   onChangeText={handleAmountChange}
                   keyboardType="decimal-pad"

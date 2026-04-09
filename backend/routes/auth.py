@@ -11,6 +11,7 @@ from models.user import User
 from repository.user import UserRepository
 from schemas.auth import (
     AuthResponse,
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
@@ -112,6 +113,22 @@ async def logout(
     _current_user: User = Depends(get_current_user),
 ) -> None:
     await auth_service.logout(db, body.refresh_token)
+
+
+# ── POST /change-password ──────────────────────────────────────────────────────
+
+@router.post(
+    "/change-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def change_password(
+    body: ChangePasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> MessageResponse:
+    await auth_service.change_password(db, current_user, body.current_password, body.new_password)
+    return MessageResponse(message="Password changed successfully")
 
 
 # ── POST /forgot-password ──────────────────────────────────────────────────────

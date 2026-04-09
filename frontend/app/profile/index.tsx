@@ -324,7 +324,7 @@ export default function ProfileScreen() {
                 { icon: 'swap-horizontal-outline', label: 'Currency',          value: user.currency,   onPress: () => setCurrencyVisible(true) },
                 { icon: 'wallet-outline',          label: 'Monthly Budget',    value: formattedBudget, onPress: () => setBudgetVisible(true) },
                 { icon: 'color-palette-outline',   label: 'Manage Categories', onPress: () => router.push('/profile/categories') },
-                { icon: 'lock-closed-outline',     label: 'Change Password',   onPress: () => router.push('/auth/forgot-password') },
+                { icon: 'lock-closed-outline',     label: 'Change Password',   onPress: () => router.push('/profile/change-password') },
               ] as const).map((item, idx, arr) => (
                 <View key={item.label} style={idx < arr.length - 1 ? { borderBottomColor: colors.border, borderBottomWidth: 1 } : undefined}>
                   <SettingRow {...item} />

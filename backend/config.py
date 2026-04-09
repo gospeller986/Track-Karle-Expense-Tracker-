@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
     refresh_token_expire_days: int = 30
 
+    # Email (Gmail SMTP)
+    smtp_user: str = ""      # your Gmail address
+    smtp_password: str = ""  # Gmail App Password (not your login password)
+
     # CORS
     allowed_origins: list[str] = ["*"]
 

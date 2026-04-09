@@ -10,21 +10,24 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme } from '@/hooks/use-theme';
 import { useCategories } from '@/hooks/use-categories';
 import { useExpenses } from '@/hooks/use-expenses';
+import { MonthPicker } from '@/components/ui/month-picker';
 import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/constants/mock-data';
 import type { ExpenseFilter } from '@/types/expense';
 import type { Expense } from '@/interfaces/expense';
 
-// Current-month ISO date bounds
-function currentMonthRange(): { startDate: string; endDate: string } {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function monthRange(year: number, month: number): { startDate: string; endDate: string } {
+  const m = String(month).padStart(2, '0');
+  const lastDay = new Date(year, month, 0).getDate();
   return {
-    startDate: `${y}-${m}-01`,
-    endDate:   `${y}-${m}-${String(lastDay).padStart(2, '0')}`,
+    startDate: `${year}-${m}-01`,
+    endDate:   `${year}-${m}-${String(lastDay).padStart(2, '0')}`,
   };
 }
 
@@ -41,12 +44,15 @@ export default function ExpensesScreen() {
   const { colors, spacing, radii, isDark } = useTheme();
   const router = useRouter();
 
+  const now = new Date();
+  const [selectedYear, setSelectedYear]   = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [typeFilter, setTypeFilter]       = useState<ExpenseFilter>('all');
   const [selectedCat, setSelectedCat]     = useState<string | null>(null);
 
-  const { startDate, endDate } = currentMonthRange();
+  const { startDate, endDate } = monthRange(selectedYear, selectedMonth);
 
-  // Fetch all current-month expenses (client-side filter for type/category)
+  // Fetch expenses for the selected month (client-side filter for type/category)
   const { expenses, isLoading, refetch } = useExpenses({
     startDate,
     endDate,
@@ -90,6 +96,15 @@ export default function ExpensesScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Month picker */}
+      <View style={{ paddingVertical: spacing.md, borderBottomColor: colors.border, borderBottomWidth: 1 }}>
+        <MonthPicker
+          year={selectedYear}
+          month={selectedMonth}
+          onChange={(y, m) => { setSelectedYear(y); setSelectedMonth(m); }}
+        />
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
 
         {/* Summary bar */}
@@ -98,13 +113,23 @@ export default function ExpensesScreen() {
           style={[styles.summaryBar, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
         >
           <View style={styles.summaryItem}>
-            <ThemedText variant="caption" color={colors.textSecondary}>Spent this month</ThemedText>
-            <ThemedText variant="h3" color={colors.expense}>{formatCurrency(totalSpent)}</ThemedText>
+            <ThemedText variant="caption" color={colors.textSecondary}>
+              Spent · {MONTH_NAMES[selectedMonth - 1].slice(0, 3)}
+            </ThemedText>
+            {isLoading
+              ? <View style={[styles.skeletonAmount, { backgroundColor: colors.surfaceElevated }]} />
+              : <ThemedText variant="h3" color={colors.expense}>{formatCurrency(totalSpent)}</ThemedText>
+            }
           </View>
           <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
           <View style={styles.summaryItem}>
-            <ThemedText variant="caption" color={colors.textSecondary}>Income this month</ThemedText>
-            <ThemedText variant="h3" color={colors.income}>{formatCurrency(totalIncome)}</ThemedText>
+            <ThemedText variant="caption" color={colors.textSecondary}>
+              Income · {MONTH_NAMES[selectedMonth - 1].slice(0, 3)}
+            </ThemedText>
+            {isLoading
+              ? <View style={[styles.skeletonAmount, { backgroundColor: colors.surfaceElevated }]} />
+              : <ThemedText variant="h3" color={colors.income}>{formatCurrency(totalIncome)}</ThemedText>
+            }
           </View>
         </LinearGradient>
 
@@ -259,4 +284,5 @@ const styles = StyleSheet.create({
   txRow:          { flexDirection: 'row', alignItems: 'center' },
   iconBubble:     { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   empty:          { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
+  skeletonAmount: { height: 28, width: 90, borderRadius: 6 },
 });

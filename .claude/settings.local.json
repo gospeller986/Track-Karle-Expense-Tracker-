@@ -64,7 +64,9 @@
       "Bash(find '/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker/frontend/screens' -type f -name *.tsx -o -name *.ts)",
       "Bash(find '/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker' -name *seed* -o -name *fixture*)",
       "Bash(grep -l \"category\\\\|CATEGORY\" \"/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker/backend/alembic/versions\"/*.py)",
-      "Bash(find '/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker' -name README* -o -name ARCHITECTURE*)"
+      "Bash(find '/Users/satyajitpal/Desktop/Satyajit Projects/expense_tracker' -name README* -o -name ARCHITECTURE*)",
+      "Bash(.venv/bin/python -m pip install resend --quiet)",
+      "Bash(python3 -m pip install resend --quiet)"
     ]
   }
 }

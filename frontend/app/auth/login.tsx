@@ -10,6 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import Ionicons from '@expo/vector-icons/Ionicons';
+
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import { Input } from '@/components/ui/input';
@@ -22,10 +24,11 @@ export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [email, setEmail]           = useState('');
+  const [password, setPassword]     = useState('');
+  const [showPassword, setShowPass] = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -86,7 +89,16 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              secureTextEntry
+              secureTextEntry={!showPassword}
+              suffix={
+                <TouchableOpacity onPress={() => setShowPass(v => !v)} hitSlop={8}>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={colors.textTertiary}
+                  />
+                </TouchableOpacity>
+              }
             />
 
             {/* Forgot password link */}
