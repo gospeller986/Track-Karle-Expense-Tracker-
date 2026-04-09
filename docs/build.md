@@ -12,6 +12,15 @@ eas build --platform android --profile preview
 Downloads as a fat APK (~50–70 MB) containing all CPU architectures.
 Link appears in terminal and at [expo.dev](https://expo.dev) when done.
 
+### Build locally (no EAS cloud)
+
+```bash
+cd frontend
+eas build --platform android --profile preview --local
+```
+
+Runs the build on your machine instead of EAS servers. Requires Java JDK 17+ and Android SDK installed locally.
+
 ### Smaller APK (arm64 devices only — most modern Android phones)
 
 ```bash
